@@ -24,9 +24,18 @@ describe("Tool Change Event", () => {
         });
 
         it("should support all annotate sub-tools", () => {
-            const subTools = ["select", "freehand", "line", "arrow", "rectangle", "ellipse", "polygon", "polyline"] as const;
-            
-            subTools.forEach(sub => {
+            const subTools = [
+                "select",
+                "freehand",
+                "line",
+                "arrow",
+                "rectangle",
+                "ellipse",
+                "polygon",
+                "polyline",
+            ] as const;
+
+            subTools.forEach((sub) => {
                 const tool: ActiveTool = { kind: "annotate", sub };
                 expect(tool.kind).toBe("annotate");
                 expect(tool.sub).toBe(sub);
@@ -35,8 +44,8 @@ describe("Tool Change Event", () => {
 
         it("should support all markup sub-tools", () => {
             const subTools = ["select", "highlight", "underline", "strikethrough", "squiggly"] as const;
-            
-            subTools.forEach(sub => {
+
+            subTools.forEach((sub) => {
                 const tool: ActiveTool = { kind: "markup", sub };
                 expect(tool.kind).toBe("markup");
                 expect(tool.sub).toBe(sub);
