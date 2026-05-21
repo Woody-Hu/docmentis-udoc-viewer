@@ -146,3 +146,7 @@ vite.config.ts.timestamp-*
 
 # Generated styles (by build-styles.js)
 packages/udoc-viewer/src/ui/viewer/styles-inline.ts
+
+# Vitest browser-mode failure screenshots / attachments
+**/test/browser/__screenshots__/
+**/.vitest-attachments/
