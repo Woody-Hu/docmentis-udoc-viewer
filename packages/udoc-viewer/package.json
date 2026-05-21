@@ -59,11 +59,17 @@
         "dev": "tsc --watch",
         "test": "vitest run",
         "test:watch": "vitest",
+        "test:browser": "vitest run --config vitest.browser.config.ts",
+        "test:browser:watch": "vitest --config vitest.browser.config.ts",
         "prepublishOnly": "npm run build"
     },
     "devDependencies": {
+        "@vitest/browser": "^4.0.18",
+        "@vitest/browser-playwright": "^4.0.18",
         "esbuild": "^0.25.0",
+        "playwright": "^1.49.0",
         "typescript": "^5.7.2",
+        "vite": "^6.0.3",
         "vitest": "^4.0.18"
     }
 }
