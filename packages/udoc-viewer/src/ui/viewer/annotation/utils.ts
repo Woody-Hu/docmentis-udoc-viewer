@@ -64,6 +64,13 @@ export function applyBoundsStyle(el: HTMLElement, bounds: Rect, scale: number): 
 
 /**
  * Create an SVG element sized to cover the annotation layer.
+ *
+ * Hit-testing for these overlays is owned by the package stylesheet: the
+ * <svg> root gets `pointer-events: none` and each painted child gets
+ * `pointer-events: visiblePainted`, so empty SVG space passes through to
+ * text/canvas underneath while painted geometry still fires hover/click.
+ * The rules live in CSS (not inline here) so host apps can override them
+ * with a normal selector — no `!important` needed.
  */
 export function createSvgOverlay(): SVGSVGElement {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -72,10 +79,6 @@ export function createSvgOverlay(): SVGSVGElement {
     svg.style.left = "0";
     svg.style.width = "100%";
     svg.style.height = "100%";
-    // `painted` lets only the rendered geometry intercept events; empty SVG
-    // space stays transparent so PDF text under the annotation layer remains
-    // selectable.
-    svg.style.pointerEvents = "painted";
     svg.style.overflow = "visible";
     return svg;
 }

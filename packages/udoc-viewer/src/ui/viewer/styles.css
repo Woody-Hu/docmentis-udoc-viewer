@@ -2377,12 +2377,19 @@
     user-select: none;
 }
 
-/* SVG shape annotations: hit-testing is owned by `pointer-events: painted` set
-   inline on each `<svg>` overlay (see createSvgOverlay), so empty SVG space
-   stays transparent to PDF text underneath and painted geometry fires
-   `annotation:hover`/`annotation:click` in all tool modes. Cursor affordance
-   stays scoped to the select tool — clicking a painted shape only does
-   something user-visible (selection) in that mode. */
+/* SVG shape annotations: the <svg> root is transparent to pointer events;
+   only painted child geometry catches hits. This keeps empty SVG space
+   passing through to the PDF text underneath while painted shapes still
+   fire `annotation:hover`/`annotation:click` in all tool modes. Rules live
+   in CSS (not inline on the element) so host apps can override with a
+   normal selector — no `!important` needed. Cursor affordance stays scoped
+   to the select tool, where clicking a painted shape selects it. */
+.udoc-spread__annotation-layer svg[data-annotation-index] {
+    pointer-events: none;
+}
+.udoc-spread__annotation-layer svg[data-annotation-index] * {
+    pointer-events: visiblePainted;
+}
 .udoc-viewer--tool-select .udoc-spread__annotation-layer svg[data-annotation-index] * {
     cursor: pointer;
 }
