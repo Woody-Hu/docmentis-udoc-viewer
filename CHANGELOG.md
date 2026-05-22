@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.6.42] - 2026-05-21
+
 ### Bug Fixes
 
 - SVG shape annotations (ink, polygon, polyline, line, square, circle) no longer treat the entire `<svg>` overlay as a hit target. Previously `createSvgOverlay()` set `pointer-events: painted` inline on the `<svg>` root, but on an `<svg>` container element that value falls back to whole-box hit-testing in practice — `annotation:hover` fired on every pointer move across the page, not just over the painted shape, and host apps had to ship an `!important` CSS shim to fix it. Hit-testing has moved to the package stylesheet: the `<svg>` root is now `pointer-events: none` and painted children are `pointer-events: visiblePainted`. Host apps can override either with a normal selector, no `!important` required
