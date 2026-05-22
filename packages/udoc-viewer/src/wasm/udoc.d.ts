@@ -902,6 +902,13 @@ export class Wasm {
    *
    * Returns an array of annotation objects for the given page.
    * Uses per-page loading for efficiency (only loads the requested page).
+   *
+   * All geometry fields on the returned annotations (`bounds`, `quads`,
+   * `vertices`, `inkList`, `start`/`end`, …) are in the page's unrotated
+   * MediaBox coordinate space — origin top-left, PDF points, +y downward
+   * — regardless of the page's `/Rotate` value. The viewer applies
+   * rotation as a display transform on top. This matches the input space
+   * expected by `pdf_save_annotations`, so the round-trip is consistent.
    */
   get_page_annotations(id: string, page_index: number): JsAnnotation[];
   /**
@@ -910,6 +917,26 @@ export class Wasm {
    * Takes the current document and a set of annotations (grouped by page),
    * writes them into the PDF's annotation structures, and returns the
    * modified PDF bytes.
+   *
+   * # Coordinate space
+   *
+   * Every geometry field on the supplied annotations (`bounds`, `quads`,
+   * `vertices`, `inkList`, `start`/`end`, `calloutLine`, …) must be in
+   * the page's **unrotated MediaBox** coordinate space:
+   *
+   * - Origin = MediaBox top-left of the page in its natural (pre-`/Rotate`)
+   *   orientation. `(0, 0)` does not move when the page is displayed
+   *   rotated 90°/180°/270°.
+   * - Units = PDF points (1/72 inch).
+   * - Axes = `+x` right, `+y` downward (Y-flipped relative to PDF's native
+   *   bottom-up `/Rect`; this function performs the flip on the way out).
+   * - `CropBox` is ignored — coordinates are MediaBox-relative even when
+   *   the page's CropBox trims the visible area.
+   *
+   * This is the same space returned by `get_page_annotations` /
+   * `get_all_annotations`, so a load-edit-save round-trip is consistent.
+   * Pages with no existing `/Annots` array are handled automatically: any
+   * pre-existing array is cleared and a fresh one is created.
    *
    * # Arguments
    * * `doc_id` - Document ID
@@ -1147,7 +1174,7 @@ export interface InitOutput {
   readonly wasm_viewer_preferences: (a: number, b: number, c: number, d: number) => void;
   readonly __wasm_bindgen_func_elem_4195: (a: number, b: number, c: number) => void;
   readonly __wasm_bindgen_func_elem_4179: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_22589: (a: number, b: number, c: number, d: number) => void;
+  readonly __wasm_bindgen_func_elem_22595: (a: number, b: number, c: number, d: number) => void;
   readonly __wbindgen_export: (a: number, b: number) => number;
   readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export3: (a: number) => void;
