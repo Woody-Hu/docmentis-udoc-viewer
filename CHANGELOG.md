@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.6.43] - 2026-06-03
+
 ### Breaking Changes
 
 - The `download:progress` event has been renamed to `document:loading`. Update any listeners registered for `download:progress` to the new event name
