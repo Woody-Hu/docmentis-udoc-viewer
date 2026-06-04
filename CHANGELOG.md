@@ -6,6 +6,23 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- The `download:progress` event has been renamed to `document:loading`. Update any listeners registered for `download:progress` to the new event name
+
+### Features
+
+- New `download` and `print` events on `ViewerEventMap`, emitted when the user triggers a download or print through the viewer UI, so host apps can observe these user-driven actions
+
+### Bug Fixes
+
+- The left-panel tab strip is now hidden when only a single tab is enabled, removing the redundant lone tab
+- Fixed the font tab's behavior
+- Search input text color now follows the active theme instead of being fixed
+- Fixed the print button's appearance in dark mode
+- PDFs containing non-ASCII bytes in fields typed as ASCII strings are now tolerated instead of failing to parse, so more real-world documents load correctly (engine)
+- Content-stream parsing no longer mis-consumes tokens when reading inline dictionary values — over-read tokens are pushed back, fixing incorrect handling of some graphics operators (engine)
+
 ## [0.6.42] - 2026-05-21
 
 ### Bug Fixes
