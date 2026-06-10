@@ -628,12 +628,12 @@ export class UDocViewer {
             // explicit in-viewer overlay (no blank screen). Markers come from the
             // WASM runtime (the single trust point), not from JS.
             const message = error instanceof Error ? error.message : String(error);
-            if (message.includes("[docMentis] permit blocked")) {
+            if (message.includes("[@docMentis/udoc-viewer] permit blocked")) {
                 this.uiShell?.dispatch({ type: "SET_PERMIT_NOTICE", notice: PERMIT_BLOCKED_NOTICE });
                 this.emit("error", { error: error as Error, phase: "permit" });
                 throw error;
             }
-            if (message.includes("[docMentis] permit unavailable")) {
+            if (message.includes("[@docMentis/udoc-viewer] permit unavailable")) {
                 this.uiShell?.dispatch({ type: "SET_PERMIT_NOTICE", notice: PERMIT_UNAVAILABLE_NOTICE });
                 this.emit("error", { error: error as Error, phase: "permit" });
                 throw error;
