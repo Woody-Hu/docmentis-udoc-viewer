@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-09
+
 ### Features
 
 - Free-tier permit notices are now surfaced in the viewer: when a document open is blocked by the free-tier quota, or the usage permit can't be verified, an explanatory overlay is shown over the viewer area instead of a blank screen.
