@@ -6,6 +6,12 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Features
+
+- New `filename` option on `viewer.load(source, { filename })` to set the download default name at load time, instead of relying on the URL basename — useful when the source URL is a presigned S3 GET whose path is an opaque storage key. Falls back to the existing source-derived / format-based name when omitted
+- The free-tier usage warning now reports the actual document-open limit returned by the permit server instead of generic wording, falling back to the generic message when the server can't be reached (engine)
+- The document-open permit request now sends the persistent anonymous `distinct_id`, so permit-server analytics attribute to the same user as telemetry's `document_open` instead of keying off the host (engine)
+
 ## [0.7.0] - 2026-06-09
 
 ### Features
