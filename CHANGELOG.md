@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-06-11
+
 ### Features
 
 - The `document_open` telemetry event now fires exactly once per gated open attempt, including parse failures (reported with `success: false` and the truncated error reason), keeping it comparable to permit issuance. This also fixes XLSX opens never emitting telemetry, and stops derived documents from `pdf_compose` / `pdf_split_by_outline` from emitting spurious open events (engine)
