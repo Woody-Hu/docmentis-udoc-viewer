@@ -233,6 +233,7 @@ export class UDocViewer {
     private viewOverrides: ViewModeDefaults;
     private currentFormat: DocumentFormat | null = null;
     private sourceFilename: string | null = null;
+    private documentDefaultFilename: string | null = null;
     private storeUnsub: (() => void) | null = null;
     private actionUnsub: (() => void) | null = null;
     private fontUsageUnsub: (() => void) | null = null;
@@ -537,8 +538,9 @@ export class UDocViewer {
      * Load a document.
      *
      * @param source - URL string, File object, or raw bytes
+     * @param options.filename - Default filename used by `download()` when called with no argument.
      */
-    async load(source: string | File | Uint8Array): Promise<void> {
+    async load(source: string | File | Uint8Array, options?: { filename?: string }): Promise<void> {
         this.ensureNotDestroyed();
 
         // Reset performance counter and start timing
@@ -558,6 +560,7 @@ export class UDocViewer {
             const downloadId = this._performanceCounter.markStart("download");
             const { bytes, filename } = await this.resolveSourceWithFilename(source);
             this.sourceFilename = filename ?? null;
+            this.documentDefaultFilename = options?.filename ?? null;
             this._performanceCounter.markEnd(downloadId);
 
             // Show processing state while WASM loads and extracts page info
@@ -659,6 +662,7 @@ export class UDocViewer {
             this._pageCount = 0;
             this._pageInfo = [];
             this.sourceFilename = null;
+            this.documentDefaultFilename = null;
 
             // Remove performance counter for this document
             this.workerClient.removePerformanceCounter(docId);
@@ -2188,6 +2192,9 @@ img { display: block; }
 
     /** Returns a default filename based on the source or format. */
     private getDefaultFilename(): string {
+        if (this.documentDefaultFilename) {
+            return this.documentDefaultFilename;
+        }
         if (this.sourceFilename) {
             // Extract filename from URL or File.name
             try {
