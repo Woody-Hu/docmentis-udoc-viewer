@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-06-18
+
 ### Bug Fixes
 
 - Charts with an unparseable `axId` now render their axes correctly, and axis titles inherit the proper default size (engine)
