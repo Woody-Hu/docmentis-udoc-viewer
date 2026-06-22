@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-06-21
+
 ### Features
 
 - CSV support — `.csv` files now open and render as spreadsheets (sheet tabs, grid layout). Because CSV has no magic bytes, the viewer derives an explicit format hint from the filename extension and passes it to `load()`; content-based detection remains the fallback for other formats
