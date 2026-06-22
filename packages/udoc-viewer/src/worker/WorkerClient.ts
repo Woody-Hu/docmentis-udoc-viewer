@@ -384,22 +384,25 @@ export class WorkerClient {
      * @returns The document ID.
      */
     /**
-     * Load a document with auto-format detection.
-     * The WASM engine inspects the file contents to determine the format.
+     * Load a document, optionally with an explicit format hint.
+     * When `format` is omitted, the WASM engine inspects the file contents to
+     * determine the format. An explicit `format` is authoritative and is
+     * required for formats without magic bytes (e.g. CSV).
      * @returns The document ID.
      */
-    async loadDocument(bytes: Uint8Array): Promise<string> {
+    async loadDocument(bytes: Uint8Array, format?: string): Promise<string> {
         const response = (await this.send({
             type: "load",
             id: "",
             bytes,
+            format,
         })) as { documentId: string };
         return response.documentId;
     }
 
     /**
      * Get the detected format of a loaded document.
-     * @returns The format string: "pdf", "docx", "pptx", "xlsx", or "image".
+     * @returns The format string: "pdf", "docx", "pptx", "xlsx", "csv", or "image".
      */
     async getDocumentFormat(documentId: string): Promise<string> {
         const response = (await this.send({

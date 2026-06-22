@@ -89,7 +89,7 @@ export type WorkerRequest =
     | { type: "disableTelemetry" }
     | { type: "setLicense"; license: string; domain: string }
     | { type: "getLicenseStatus" }
-    | { type: "load"; id: string; bytes: Uint8Array }
+    | { type: "load"; id: string; bytes: Uint8Array; format?: string }
     | { type: "loadPdf"; id: string; bytes: Uint8Array }
     | { type: "loadImage"; id: string; bytes: Uint8Array }
     | { type: "loadPptx"; id: string; bytes: Uint8Array }
@@ -298,7 +298,10 @@ async function handleMessage(event: MessageEvent<WorkerRequest & { _id?: number 
                 ensureInitialized();
                 // `load` is async: for free/unlicensed usage it fetches and
                 // verifies a server-signed permit (inside WASM) before opening.
-                const documentId = await wasm!.load(request.bytes);
+                // An explicit `format` hint is authoritative and is required for
+                // formats without magic bytes (e.g. CSV); otherwise WASM detects
+                // the format from the file contents.
+                const documentId = await wasm!.load(request.bytes, request.format ?? null);
                 respond({ type: "load", success: true, documentId });
                 break;
             }

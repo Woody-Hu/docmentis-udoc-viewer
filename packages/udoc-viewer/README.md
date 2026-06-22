@@ -29,6 +29,7 @@ Most web document viewers only handle PDF, rely on server-side rendering, or req
 | DOCX   | .docx                                                                                             |
 | PPTX   | .pptx                                                                                             |
 | XLSX   | .xlsx                                                                                             |
+| CSV    | .csv                                                                                              |
 | Vector | .svg, .wmf, .emf                                                                                  |
 | Images | .png, .jpg, .jpeg, .gif, .webp, .bmp, .tif, .tiff, .ico, .tga, .ppm, .pgm, .pbm, .hdr, .exr, .qoi |
 

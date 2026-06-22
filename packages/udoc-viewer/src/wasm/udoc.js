@@ -99,7 +99,7 @@ export class Wasm {
     /**
      * Get the format of a loaded document.
      *
-     * Returns one of: "pdf", "docx", "pptx", "xlsx", "image".
+     * Returns one of: "pdf", "docx", "pptx", "xlsx", "csv", "image".
      * @param {string} id
      * @returns {string}
      */
@@ -453,13 +453,20 @@ export class Wasm {
     /**
      * Load a document by auto-detecting its format from the file contents.
      *
-     * Inspects magic bytes to determine the format:
+     * When `format` is supplied (one of `"pdf"`, `"docx"`, `"pptx"`, `"xlsx"`,
+     * `"csv"`, `"image"`), it is authoritative and the matching loader is used
+     * directly — the viewer is expected to know the format (from extension, MIME
+     * type, or user choice). This is the only way to open formats with no magic
+     * bytes, such as CSV. When `format` is `None`, the format is detected from
+     * magic bytes:
      * - `%PDF` → PDF
      * - `PK\x03\x04` (ZIP) → inspects ZIP entries for `word/` (DOCX), `ppt/` (PPTX), or `xl/` (XLSX)
      * - Image magic bytes (JPEG, PNG, GIF, BMP, TIFF, WebP) → Image
      *
      * # Arguments
      * * `bytes` - Raw file data
+     * * `format` - Optional explicit format hint; falls back to magic-byte
+     *   detection when `None`.
      *
      * # Returns
      * A unique document ID that can be used to reference this document.
@@ -471,12 +478,15 @@ export class Wasm {
      * licensed usage skips the permit entirely. The per-format loaders are
      * private so there is no ungated open path.
      * @param {Uint8Array} bytes
+     * @param {string | null} [format]
      * @returns {Promise<string>}
      */
-    load(bytes) {
+    load(bytes, format) {
         const ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_export);
         const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.wasm_load(this.__wbg_ptr, ptr0, len0);
+        var ptr1 = isLikeNone(format) ? 0 : passStringToWasm0(format, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+        var len1 = WASM_VECTOR_LEN;
+        const ret = wasm.wasm_load(this.__wbg_ptr, ptr0, len0, ptr1, len1);
         return takeObject(ret);
     }
     /**
@@ -1597,7 +1607,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return __wasm_bindgen_func_elem_22822(a, state0.b, arg0, arg1);
+                        return __wasm_bindgen_func_elem_22978(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -1631,7 +1641,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return __wasm_bindgen_func_elem_22822(a, state0.b, arg0, arg1);
+                        return __wasm_bindgen_func_elem_22978(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -2090,13 +2100,13 @@ function __wbg_get_imports() {
             getObject(arg0).writeTexture(getObject(arg1), getObject(arg2), getObject(arg3), getObject(arg4));
         }, arguments); },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 1846, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_22809);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 1885, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_22965);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000002: function(arg0, arg1) {
             // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 256, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_3627);
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_3628);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000003: function(arg0) {
@@ -2145,14 +2155,14 @@ function __wbg_get_imports() {
     };
 }
 
-function __wasm_bindgen_func_elem_3627(arg0, arg1, arg2) {
-    wasm.__wasm_bindgen_func_elem_3627(arg0, arg1, addHeapObject(arg2));
+function __wasm_bindgen_func_elem_3628(arg0, arg1, arg2) {
+    wasm.__wasm_bindgen_func_elem_3628(arg0, arg1, addHeapObject(arg2));
 }
 
-function __wasm_bindgen_func_elem_22809(arg0, arg1, arg2) {
+function __wasm_bindgen_func_elem_22965(arg0, arg1, arg2) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.__wasm_bindgen_func_elem_22809(retptr, arg0, arg1, addHeapObject(arg2));
+        wasm.__wasm_bindgen_func_elem_22965(retptr, arg0, arg1, addHeapObject(arg2));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         if (r1) {
@@ -2163,8 +2173,8 @@ function __wasm_bindgen_func_elem_22809(arg0, arg1, arg2) {
     }
 }
 
-function __wasm_bindgen_func_elem_22822(arg0, arg1, arg2, arg3) {
-    wasm.__wasm_bindgen_func_elem_22822(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+function __wasm_bindgen_func_elem_22978(arg0, arg1, arg2, arg3) {
+    wasm.__wasm_bindgen_func_elem_22978(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 

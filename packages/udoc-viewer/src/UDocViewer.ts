@@ -215,6 +215,19 @@ function generateAnnotationId(): string {
 }
 
 /**
+ * Derive an explicit format hint from a filename extension.
+ *
+ * WASM auto-detects most formats from magic bytes, so a hint is only needed
+ * for formats that have none — currently CSV. Returning `undefined` lets WASM
+ * fall back to content-based detection.
+ */
+function detectFormatHint(filename: string | undefined): DocumentFormat | undefined {
+    if (!filename) return undefined;
+    const ext = filename.split(/[?#]/)[0].split(".").pop()?.toLowerCase();
+    return ext === "csv" ? "csv" : undefined;
+}
+
+/**
  * Document viewer component.
  *
  * Supports both UI mode (with container) and headless mode (without container).
@@ -566,9 +579,12 @@ export class UDocViewer {
             // Show processing state while WASM loads and extracts page info
             this.uiShell?.dispatch({ type: "SET_PROCESSING", processing: true });
 
-            // Load document — WASM auto-detects format from file contents
+            // Load document — WASM auto-detects format from file contents, but
+            // formats without magic bytes (e.g. CSV) need an explicit hint
+            // derived from the filename extension.
             const loadId = this._performanceCounter.markStart("load");
-            this.documentId = await this.workerClient.loadDocument(bytes);
+            const formatHint = detectFormatHint(filename);
+            this.documentId = await this.workerClient.loadDocument(bytes, formatHint);
             this._performanceCounter.markEnd(loadId);
 
             // Get the detected format from WASM for UI defaults
@@ -2182,6 +2198,8 @@ img { display: block; }
                 return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
             case "xlsx":
                 return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            case "csv":
+                return "text/csv";
             case "image":
                 return "application/octet-stream";
             case "pdf":
@@ -2216,6 +2234,8 @@ img { display: block; }
                 return "document.pptx";
             case "xlsx":
                 return "document.xlsx";
+            case "csv":
+                return "document.csv";
             case "image":
                 return "image.png";
             case "pdf":

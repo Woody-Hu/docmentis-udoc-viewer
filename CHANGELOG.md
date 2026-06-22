@@ -6,6 +6,10 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Features
+
+- CSV support — `.csv` files now open and render as single-sheet spreadsheets. Because CSV has no magic bytes, the viewer passes an explicit format hint derived from the filename extension to the engine (engine)
+
 ## [0.7.3] - 2026-06-18
 
 ### Bug Fixes

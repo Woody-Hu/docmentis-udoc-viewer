@@ -594,7 +594,7 @@ export class Wasm {
     /**
      * Get the format of a loaded document.
      *
-     * Returns one of: "pdf", "docx", "pptx", "xlsx", "image".
+     * Returns one of: "pdf", "docx", "pptx", "xlsx", "csv", "image".
      */
     document_format(id: string): string;
     /**
@@ -729,13 +729,20 @@ export class Wasm {
     /**
      * Load a document by auto-detecting its format from the file contents.
      *
-     * Inspects magic bytes to determine the format:
+     * When `format` is supplied (one of `"pdf"`, `"docx"`, `"pptx"`, `"xlsx"`,
+     * `"csv"`, `"image"`), it is authoritative and the matching loader is used
+     * directly — the viewer is expected to know the format (from extension, MIME
+     * type, or user choice). This is the only way to open formats with no magic
+     * bytes, such as CSV. When `format` is `None`, the format is detected from
+     * magic bytes:
      * - `%PDF` → PDF
      * - `PK\x03\x04` (ZIP) → inspects ZIP entries for `word/` (DOCX), `ppt/` (PPTX), or `xl/` (XLSX)
      * - Image magic bytes (JPEG, PNG, GIF, BMP, TIFF, WebP) → Image
      *
      * # Arguments
      * * `bytes` - Raw file data
+     * * `format` - Optional explicit format hint; falls back to magic-byte
+     *   detection when `None`.
      *
      * # Returns
      * A unique document ID that can be used to reference this document.
@@ -747,7 +754,7 @@ export class Wasm {
      * licensed usage skips the permit entirely. The per-format loaders are
      * private so there is no ungated open path.
      */
-    load(bytes: Uint8Array): Promise<string>;
+    load(bytes: Uint8Array, format?: string | null): Promise<string>;
     /**
      * Check if a document requires a password to open.
      *
@@ -1104,7 +1111,7 @@ export interface InitOutput {
     readonly wasm_has_gpu: (a: number) => number;
     readonly wasm_init_gpu: (a: number) => number;
     readonly wasm_license_status: (a: number) => number;
-    readonly wasm_load: (a: number, b: number, c: number) => number;
+    readonly wasm_load: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly wasm_needs_password: (a: number, b: number, c: number, d: number) => void;
     readonly wasm_new: (a: number, b: number, c: number, d: number) => number;
     readonly wasm_page_count: (a: number, b: number, c: number, d: number) => void;
@@ -1126,9 +1133,9 @@ export interface InitOutput {
     readonly wasm_set_visibility_group_visible: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly wasm_setup_telemetry: (a: number, b: number, c: number) => void;
     readonly wasm_viewer_preferences: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_22809: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_22822: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_3627: (a: number, b: number, c: number) => void;
+    readonly __wasm_bindgen_func_elem_22965: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_22978: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3628: (a: number, b: number, c: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

@@ -1,6 +1,6 @@
 import type { Store } from "../../framework/store";
 import { subscribeSelector } from "../../framework/selectors";
-import type { ViewerState } from "../state";
+import { type ViewerState, isSpreadsheetFormat } from "../state";
 import type { Action } from "../actions";
 import type { PageGroup } from "../../../worker/index.js";
 
@@ -14,7 +14,7 @@ function selectSheetTabBar(state: ViewerState): SheetTabBarSlice {
     return {
         pageGroups: state.pageGroups,
         activeGroupIndex: state.activeGroupIndex,
-        isXlsx: state.documentFormat === "xlsx",
+        isXlsx: isSpreadsheetFormat(state.documentFormat),
     };
 }
 

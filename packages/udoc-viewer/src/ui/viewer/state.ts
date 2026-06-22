@@ -139,10 +139,18 @@ export function isToolSetKind(kind: ToolKind): kind is "annotate" | "markup" {
 }
 
 /** Document format as detected during loading */
-export type DocumentFormat = "pdf" | "pptx" | "docx" | "xlsx" | "image";
+export type DocumentFormat = "pdf" | "pptx" | "docx" | "xlsx" | "csv" | "image";
 
 /** Formats that support annotation editing */
 export const ANNOTATION_FORMATS: ReadonlySet<DocumentFormat> = new Set(["pdf"]);
+
+/** Spreadsheet formats that render as sheets with page groups */
+export const SPREADSHEET_FORMATS: ReadonlySet<DocumentFormat> = new Set(["xlsx", "csv"]);
+
+/** Whether a format renders as a spreadsheet (sheet tabs, grid layout). */
+export function isSpreadsheetFormat(format: DocumentFormat | null): boolean {
+    return format !== null && SPREADSHEET_FORMATS.has(format);
+}
 
 /** Subset of view mode state that can be overridden per format */
 export interface ViewModeDefaults {
@@ -166,6 +174,7 @@ export function getFormatDefaults(format: DocumentFormat): ViewModeDefaults {
         case "docx":
             return { viewMode: "paged", scrollMode: "continuous", zoomMode: "fit-spread-width-max" };
         case "xlsx":
+        case "csv":
             return {
                 viewMode: "continuous",
                 scrollMode: "continuous",
