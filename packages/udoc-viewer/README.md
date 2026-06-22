@@ -2,7 +2,7 @@
 
 Universal document viewer for the web.
 
-Open-source, framework-agnostic viewer powered by a built-from-scratch WebAssembly engine for high-fidelity rendering across PDF, DOCX, PPTX, XLSX, SVG, and images.
+Open-source, framework-agnostic viewer powered by a built-from-scratch WebAssembly engine for high-fidelity rendering across PDF, DOCX, PPTX, XLSX, CSV, SVG, and images.
 
 [![npm version](https://img.shields.io/npm/v/@docmentis/udoc-viewer)](https://www.npmjs.com/package/@docmentis/udoc-viewer)
 [![license](https://img.shields.io/npm/l/@docmentis/udoc-viewer)](./LICENSE)
@@ -15,7 +15,7 @@ Open-source, framework-agnostic viewer powered by a built-from-scratch WebAssemb
 
 Most web document viewers only handle PDF, rely on server-side rendering, or require expensive commercial licenses. udoc-viewer is different:
 
-- **Truly universal** — PDF, Word, PowerPoint, Excel, SVG, and images in a single viewer, with more formats coming
+- **Truly universal** — PDF, Word, PowerPoint, Excel, CSV, SVG, and images in a single viewer, with more formats coming
 - **High fidelity** — powered by a custom Rust/WebAssembly rendering engine, not PDF.js
 - **Client-side only** — everything runs in the browser, no server round-trips
 - **Framework agnostic** — works with React, Vue, Angular, Svelte, or plain HTML
@@ -123,7 +123,7 @@ Full working examples for every major framework are in the [`examples/`](../../e
 
 ## Features
 
-- 📄 **Multi-format rendering** — PDF, DOCX, PPTX, XLSX, and images in one unified viewer
+- 📄 **Multi-format rendering** — PDF, DOCX, PPTX, XLSX, CSV, SVG, and images in one unified viewer
 - 🎯 **High-fidelity output** — custom Rust rendering engine compiled to WebAssembly
 - 🔍 **Zoom & navigation** — toolbar with zoom controls, page thumbnails, and keyboard navigation
 - 🔎 **Full-text search** — search with match highlighting, navigation, and fuzzy matching for AI citations
@@ -383,7 +383,7 @@ if (viewer.isLoaded) {
 engine sees it. Glyph runs are concatenated in visual order; spaces and tabs
 become `" "`, line breaks and paragraph ends become `"\n"`, and inline
 drawings become `"\uFFFC"` (object replacement character). Works uniformly
-across PDF, DOCX, PPTX, and XLSX.
+across PDF, DOCX, PPTX, XLSX, and CSV.
 
 ```typescript
 // Extract text from a single page (0-based index)
