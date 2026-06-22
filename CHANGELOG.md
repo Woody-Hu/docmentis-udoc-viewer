@@ -8,7 +8,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ### Features
 
-- CSV support — `.csv` files now open and render as single-sheet spreadsheets. Because CSV has no magic bytes, the viewer passes an explicit format hint derived from the filename extension to the engine (engine)
+- CSV support — `.csv` files now open and render as spreadsheets (sheet tabs, grid layout). Because CSV has no magic bytes, the viewer derives an explicit format hint from the filename extension and passes it to `load()`; content-based detection remains the fallback for other formats
+- New `docmentis-udoc-csv` adapter parses CSV (RFC 4180 quoting, embedded commas/newlines, CRLF, BOM stripping) into the existing grid layout/render pipeline. Cells stay verbatim text so leading zeros and IDs are preserved, column widths auto-fit to the widest field, and all-numeric or all-date columns are right-aligned (engine)
 
 ## [0.7.3] - 2026-06-18
 
