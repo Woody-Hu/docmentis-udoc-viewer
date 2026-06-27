@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-06-27
+
 ### Features
 
 - DOCX files now load fonts embedded in the document's font table, so text renders with the intended typefaces even when they aren't installed locally (engine)
