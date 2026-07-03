@@ -6,6 +6,10 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed some PDFs with embedded (uncompressed) inline images rendering incorrectly or appearing corrupted (engine)
+
 ## [0.7.5] - 2026-06-27
 
 ### Features
