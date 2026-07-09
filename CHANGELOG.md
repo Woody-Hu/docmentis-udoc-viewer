@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-07-09
+
 ### Bug Fixes
 
 - Fixed page-number and total-page-count fields showing broken placeholders (e.g. "Page of ") instead of the actual numbers in some Word documents (engine)
