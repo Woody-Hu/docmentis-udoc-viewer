@@ -6,6 +6,12 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed page-number and total-page-count fields showing broken placeholders (e.g. "Page of ") instead of the actual numbers in some Word documents (engine)
+- Fixed missing header logos and tall footers overflowing or overlapping body content in some Word documents (engine)
+- Fixed text extraction dropping characters for ligatures and other glyphs that map to multiple Unicode code points, so copied and extracted text is now complete (engine)
+
 ## [0.7.6] - 2026-07-02
 
 ### Bug Fixes
