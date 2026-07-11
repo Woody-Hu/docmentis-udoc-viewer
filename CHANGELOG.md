@@ -6,6 +6,11 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed charts with a single data series rendering all bars in the same color and wrapping the legend across multiple rows (engine)
+- Fixed table columns rendering with the wrong width in some Word documents where a column had no explicit width set (engine)
+
 ## [0.7.7] - 2026-07-09
 
 ### Bug Fixes
