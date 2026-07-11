@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.8] - 2026-07-10
+
 ### Bug Fixes
 
 - Fixed charts with a single data series rendering all bars in the same color and wrapping the legend across multiple rows (engine)
