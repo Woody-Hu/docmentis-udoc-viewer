@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.9] - 2026-07-14
+
 ### Bug Fixes
 
 - Fixed charts dropping their axis tick labels when the axis has no visible line — horizontal bar charts could show only a single category label instead of one per bar (engine)
