@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.10] - 2026-07-27
+
 ### Bug Fixes
 
 - Fixed text painting the wrong glyphs in some PDFs that embed symbolic or subset TrueType fonts — characters landed in the right places but showed as unrelated symbols (engine)
