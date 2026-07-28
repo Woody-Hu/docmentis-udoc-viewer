@@ -6,6 +6,16 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed text painting the wrong glyphs in some PDFs that embed symbolic or subset TrueType fonts — characters landed in the right places but showed as unrelated symbols (engine)
+- Fixed masked artwork vanishing in some PDFs, where content under a soft mask combined with a coordinate change rendered as fully transparent (engine)
+
+### Performance
+
+- Roughly halved page render time for text-heavy PDFs that draw with embedded bitmap (Type 3) fonts (engine)
+- Reduced the WASM binary by about 0.45 MB, lowering initial download and startup cost (engine)
+
 ## [0.7.9] - 2026-07-14
 
 ### Bug Fixes
