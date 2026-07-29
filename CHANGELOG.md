@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.11] - 2026-07-28
+
 ### Bug Fixes
 
 - Fixed text set in Symbol or ZapfDingbats disappearing in some PDFs that reference these standard fonts without embedding them — letters rendered as blanks while digits still showed (engine)
