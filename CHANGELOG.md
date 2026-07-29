@@ -6,6 +6,12 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed text set in Symbol or ZapfDingbats disappearing in some PDFs that reference these standard fonts without embedding them — letters rendered as blanks while digits still showed (engine)
+- Fixed slide titles in some PowerPoint presentations rendering at the wrong position and size instead of the placement the slide layout defines (engine)
+- Fixed "Hide Background Graphics" being ignored in PowerPoint presentations, so decorative background artwork no longer shows on slides that turn it off (engine)
+
 ## [0.7.10] - 2026-07-27
 
 ### Bug Fixes
