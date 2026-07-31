@@ -2,6 +2,7 @@ import type { Store } from "../../framework/store";
 import { subscribeSelector } from "../../framework/selectors";
 import { on } from "../../framework/events";
 import type { I18n } from "../i18n/index.js";
+import { advanceActiveSlideAnimation } from "../animation";
 import type { ViewerState, ZoomMode, PanelTab, ThemeMode, ActiveTool, ToolKind, DocumentFormat } from "../state";
 
 /** Simple-tool kinds — the subset of `ToolKind` that has no sub-toolbar. */
@@ -642,6 +643,8 @@ export function createToolbar() {
                 }
             }),
             on(nextBtn, "click", () => {
+                // A slide mid-build consumes the advance before the deck turns.
+                if (advanceActiveSlideAnimation()) return;
                 const state = store.getState();
                 if (state.page < state.pageCount) {
                     store.dispatch({ type: "NAVIGATE_TO_PAGE", page: state.page + 1 });

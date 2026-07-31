@@ -24,6 +24,8 @@ import type {
     OutlineSection,
     SplitByOutlineResult,
     VisibilityGroup,
+    SlideAnimation,
+    AnimationLayer,
     WorkerRequest,
     WorkerResponse,
 } from "./worker.js";
@@ -54,6 +56,10 @@ import type {
     JsLayoutGridColumn as LayoutGridColumn,
     JsLayoutGlyph as LayoutGlyph,
     JsTransform as Transform,
+    JsAnimationStep as AnimationStep,
+    JsAnimationEffect as AnimationEffect,
+    JsAnimationTarget as AnimationTarget,
+    JsEffectClass as EffectClass,
 } from "../wasm/udoc.js";
 
 import { WORKER_INLINE } from "./worker-inline.js";
@@ -89,6 +95,7 @@ export type {
 
 // Re-export font usage types from WASM
 export type { FontSource, ResolvedFontInfo, FontUsageEntry };
+export type { SlideAnimation, AnimationLayer, AnimationStep, AnimationEffect, AnimationTarget, EffectClass };
 
 // Re-export layout types from WASM
 export type {
@@ -640,6 +647,42 @@ export class WorkerClient {
      */
     async getLayoutPage(documentId: string, pageIndex: number): Promise<LayoutPage> {
         return this.requestText(documentId, pageIndex);
+    }
+
+    /**
+     * Get the build sequence of a slide, or `undefined` if it has none.
+     *
+     * Sent directly rather than through the work queue: the timeline is small
+     * metadata and the viewer needs it before it can decide whether the page
+     * even requires layered rendering.
+     */
+    async getSlideAnimation(documentId: string, pageIndex: number): Promise<SlideAnimation | undefined> {
+        const response = (await this.send({ type: "getSlideAnimation", documentId, pageIndex })) as {
+            animation: SlideAnimation | undefined;
+        };
+        return response.animation;
+    }
+
+    /**
+     * Render a page as independently animatable layers, back-to-front.
+     *
+     * Returns `undefined` when the page has no animations, in which case the
+     * caller should fall back to a normal full-page render.
+     */
+    async renderPageLayers(
+        documentId: string,
+        pageIndex: number,
+        width: number,
+        height: number,
+    ): Promise<AnimationLayer[] | undefined> {
+        const response = (await this.send({
+            type: "renderPageLayers",
+            documentId,
+            pageIndex,
+            width,
+            height,
+        })) as { layers: AnimationLayer[] | undefined };
+        return response.layers;
     }
 
     /**

@@ -46,5 +46,11 @@ export type {
     AnnotationsByPage,
     PageGroup,
     PageGroupLayout,
+    SlideAnimation,
+    AnimationLayer,
+    AnimationStep,
+    AnimationEffect,
+    AnimationTarget,
+    EffectClass,
 } from "./WorkerClient.js";
 export type { WorkerRequest, WorkerResponse } from "./worker.js";

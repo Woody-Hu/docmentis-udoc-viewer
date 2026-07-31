@@ -37,6 +37,14 @@ import { createBranding, type BrandingHandle } from "./Branding";
 import { on } from "../../framework/events";
 import { getDevicePixelRatio, getEffectiveDpr, snapToDevice, toCssPixels, toDevicePixels } from "../layout";
 import { runTransition, type TransitionHandle } from "../transition";
+import {
+    advanceActiveSlideAnimation,
+    clearActiveSlideAnimation,
+    forgetSlideAnimations,
+    knownToAnimate,
+    mountSlideAnimation,
+    prefetchSlideAnimation,
+} from "../animation";
 import { createViewToolController } from "../tools/ViewToolController";
 import { createAnnotationDrawController } from "../tools/AnnotationDrawController";
 import { createAnnotationSelectController } from "../tools/AnnotationSelectController";
@@ -848,6 +856,31 @@ export function createViewport(showAttribution = true, customPageOverlay?: Custo
         unsubEvents.push(() => container.removeEventListener("pointermove", handleAnnotationPointerMove));
         unsubEvents.push(() => container.removeEventListener("pointerleave", handleAnnotationPointerLeave));
 
+        // Advance the build by clicking the slide, the way a presentation is
+        // driven. Only in spread mode, only with the plain pointer tool, and
+        // never when the click was doing something else — selecting text,
+        // hitting a link or an annotation, or working with a drawing tool.
+        const handleAdvanceClick = (e: MouseEvent) => {
+            if (!currentSlice || currentSlice.scrollMode !== "spread") return;
+            if (e.button !== 0 || e.detail > 1) return;
+            if (!animationsEnabled()) return;
+            if (!storeRef || storeRef.getState().activeTool.kind !== "pointer") return;
+
+            // A deck can opt out of click advance (PPTX `advClick="0"`).
+            const pageInfo = currentSlice.pageInfos[currentSlice.page - 1];
+            if (pageInfo?.transition?.advanceOnClick === false) return;
+
+            const target = e.target as HTMLElement | null;
+            if (target?.closest(".udoc-spread__annotation-layer, .udoc-spread__custom-page-overlay-layer, a, button")) {
+                return;
+            }
+            if (!window.getSelection()?.isCollapsed) return;
+
+            if (advanceActiveSlideAnimation()) e.preventDefault();
+        };
+        scrollArea.addEventListener("click", handleAdvanceClick);
+        unsubEvents.push(() => scrollArea.removeEventListener("click", handleAdvanceClick));
+
         // Handle mouse wheel for page flip in spread mode
         let wheelCooldown = false;
         const handleWheel = (e: WheelEvent) => {
@@ -867,6 +900,8 @@ export function createViewport(showAttribution = true, customPageOverlay?: Custo
             const currentSpreadIndex = findSpreadForPage(layoutState.spreads, currentSlice.page);
 
             if (e.deltaY > 0) {
+                // A slide mid-build consumes the advance before the deck turns.
+                if (advanceActiveSlideAnimation()) return;
                 // Scroll down - next spread
                 const nextSpreadIndex = Math.min(currentSpreadIndex + 1, layoutState.spreads.length - 1);
                 if (nextSpreadIndex !== currentSpreadIndex) {
@@ -1658,8 +1693,14 @@ export function createViewport(showAttribution = true, customPageOverlay?: Custo
                         scale: state.scale,
                         dpi: slice.dpi,
                     })
-                    .then(() => {
+                    .then(async () => {
                         // Bail if the transition was cancelled while waiting
+                        if (transitionOverlay !== snapshot) return;
+
+                        // Mount the build before revealing the incoming slide.
+                        // The snapshot still covers it, so an animated slide is
+                        // never seen finished and then rewound to step 0.
+                        await mountAnimationForSpread(spreadComp, slice, forward);
                         if (transitionOverlay !== snapshot) return;
 
                         // Render done — clear the cover z-index and start animating.
@@ -1690,20 +1731,24 @@ export function createViewport(showAttribution = true, customPageOverlay?: Custo
                     dpr,
                 );
                 workerClient.prerenderAdjacentPages(slice.docId, slice.page, renderScale, slice.pageInfos.length);
+                prefetchNeighbourAnimations(slice);
             }
         } else if (!rendersPaused) {
             // No transition — render immediately
-            spreadComp.render(workerClient, {
-                docId: slice.docId,
-                scale: state.scale,
-                dpi: slice.dpi,
-            });
+            void spreadComp
+                .render(workerClient, {
+                    docId: slice.docId,
+                    scale: state.scale,
+                    dpi: slice.dpi,
+                })
+                .then(() => mountAnimationForSpread(spreadComp, slice, true));
 
             // Prerender adjacent pages for smooth page flipping
             const dpr = getDevicePixelRatio();
             const pointsToPixels = getPointsToPixels(slice.dpi);
             const renderScale = computePrerenderScale(slice.pageInfos, slice.page, state.scale, pointsToPixels, dpr);
             workerClient.prerenderAdjacentPages(slice.docId, slice.page, renderScale, slice.pageInfos.length);
+            prefetchNeighbourAnimations(slice);
         }
 
         previousSpreadIndex = spreadIndex;
@@ -1713,6 +1758,81 @@ export function createViewport(showAttribution = true, customPageOverlay?: Custo
             layoutDirty = false;
         }
         fireViewportChangeIfChanged();
+    }
+
+    /** Whether slide build sequences are turned on for this viewer (beta). */
+    function animationsEnabled(): boolean {
+        return storeRef?.getState().animationsEnabled === true;
+    }
+
+    /**
+     * Warm the build-sequence cache for the slides on either side.
+     *
+     * Presenting a deck is sequential, so by the time the user advances, the
+     * next slide's answer is already known and its canvas can be hidden before
+     * it is ever painted.
+     */
+    function prefetchNeighbourAnimations(slice: ViewportSlice): void {
+        if (!animationsEnabled() || slice.scrollMode !== "spread" || !workerClient || !slice.docId) return;
+        prefetchSlideAnimation(workerClient, slice.docId, slice.page);
+        prefetchSlideAnimation(workerClient, slice.docId, slice.page - 2);
+    }
+
+    /**
+     * Mount the primary page's build sequence over the spread it just rendered.
+     *
+     * Only slides with animations get a layer stack; everything else keeps the
+     * plain page canvas. Navigating backwards lands on the fully built slide,
+     * which is what PowerPoint does.
+     */
+    async function mountAnimationForSpread(
+        spreadComp: SpreadComponent,
+        slice: ViewportSlice,
+        forward: boolean,
+    ): Promise<void> {
+        if (!animationsEnabled() || slice.scrollMode !== "spread" || !workerClient || !slice.docId) {
+            clearActiveSlideAnimation();
+            return;
+        }
+        const client = workerClient;
+        const docId = slice.docId;
+
+        const targets = spreadComp.getAnimationTargets(slice.page);
+        if (!targets || targets.cssWidth <= 0 || targets.cssHeight <= 0) {
+            clearActiveSlideAnimation();
+            return;
+        }
+
+        // When the answer is already cached, hide the finished slide before
+        // yielding — otherwise it is painted for a frame before the build
+        // rewinds it. A cold cache falls back to hiding inside the mount, one
+        // cheap round trip later.
+        if (knownToAnimate(docId, slice.page - 1) === true) {
+            targets.canvas.style.visibility = "hidden";
+        }
+
+        // Rasterize layers at the same device resolution as the page canvas so
+        // they stay crisp at rest and line up pixel for pixel.
+        const dpr = getEffectiveDpr(targets.cssWidth, targets.cssHeight, getDevicePixelRatio());
+        const renderWidth = Math.max(1, Math.round(targets.cssWidth * dpr));
+        const renderHeight = Math.max(1, Math.round(targets.cssHeight * dpr));
+
+        try {
+            await mountSlideAnimation({
+                workerClient: client,
+                docId,
+                pageIndex: slice.page - 1,
+                host: targets.host,
+                pageCanvas: targets.canvas,
+                renderWidth,
+                renderHeight,
+                startComplete: !forward,
+            });
+        } catch {
+            // A failed build must never cost the user the slide itself; the
+            // plain canvas is already on screen and stays.
+            clearActiveSlideAnimation();
+        }
     }
 
     /** Find the spread whose center is closest to a given Y position (used for render priority). */
@@ -1867,6 +1987,8 @@ export function createViewport(showAttribution = true, customPageOverlay?: Custo
     }
 
     function destroy(): void {
+        clearActiveSlideAnimation();
+        forgetSlideAnimations();
         if (unsubRender) unsubRender();
         if (unsubScroll) unsubScroll();
         if (unsubNavigation) unsubNavigation();

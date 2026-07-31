@@ -429,6 +429,20 @@ export interface ViewerOptions {
     enableTransitions?: boolean;
 
     /**
+     * Enable slide build sequences (animations) for PPTX documents.
+     *
+     * When true, a slide's animations play in spread (single-page) mode: the
+     * slide starts with its entrance targets hidden and reveals them one
+     * advance at a time, driven by a click, the wheel, or the next-page button.
+     *
+     * Beta. Entrance and exit effects and paragraph builds are sequenced
+     * correctly; only Appear, Fade and Zoom play their authored motion, and
+     * every other preset falls back to a fade.
+     * @default false
+     */
+    enableAnimations?: boolean;
+
+    /**
      * Locale for UI strings.
      *
      * Built-in locales: `en`, `zh-CN`, `zh-TW`, `ja`, `ko`, `es`, `fr`, `de`, `pt-BR`, `ar`, `ru`.

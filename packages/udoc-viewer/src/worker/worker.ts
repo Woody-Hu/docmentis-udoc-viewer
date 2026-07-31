@@ -20,6 +20,8 @@ import type {
     JsPageTransition as PageTransition,
     JsPageGroup as PageGroup,
     JsPageGroupLayout as PageGroupLayout,
+    JsSlideAnimation as SlideAnimation,
+    JsAnimationLayer as AnimationLayer,
 } from "../wasm/udoc.js";
 
 export type {
@@ -37,6 +39,8 @@ export type {
     PageTransition,
     PageGroup,
     PageGroupLayout,
+    SlideAnimation,
+    AnimationLayer,
 };
 
 let wasm: Wasm | null = null;
@@ -108,6 +112,14 @@ export type WorkerRequest =
     | { type: "getPageAnnotations"; documentId: string; pageIndex: number }
     | { type: "getAllAnnotations"; documentId: string }
     | { type: "getLayoutPage"; documentId: string; pageIndex: number }
+    | { type: "getSlideAnimation"; documentId: string; pageIndex: number }
+    | {
+          type: "renderPageLayers";
+          documentId: string;
+          pageIndex: number;
+          width: number;
+          height: number;
+      }
     | { type: "pdfCompose"; compositions: Composition[]; docIds: string[] }
     | { type: "getBytes"; documentId: string }
     | { type: "pdfSplitByOutline"; documentId: string; maxLevel: number; splitMidPage: boolean }
@@ -183,6 +195,10 @@ export type WorkerResponse =
     | { type: "getAllAnnotations"; success: false; error: string }
     | { type: "getLayoutPage"; success: true; layout: LayoutPage }
     | { type: "getLayoutPage"; success: false; error: string }
+    | { type: "getSlideAnimation"; success: true; animation: SlideAnimation | undefined }
+    | { type: "getSlideAnimation"; success: false; error: string }
+    | { type: "renderPageLayers"; success: true; layers: AnimationLayer[] | undefined }
+    | { type: "renderPageLayers"; success: false; error: string }
     | { type: "pdfCompose"; success: true; documentIds: string[] }
     | { type: "pdfCompose"; success: false; error: string }
     | { type: "getBytes"; success: true; bytes: Uint8Array }
@@ -456,6 +472,39 @@ async function handleMessage(event: MessageEvent<WorkerRequest & { _id?: number 
                 ensureInitialized();
                 const layout = wasm!.get_layout_page(request.documentId, request.pageIndex);
                 respond({ type: "getLayoutPage", success: true, layout });
+                break;
+            }
+
+            case "getSlideAnimation": {
+                ensureInitialized();
+                const animation = wasm!.slide_animation(request.documentId, request.pageIndex);
+                respond({ type: "getSlideAnimation", success: true, animation });
+                break;
+            }
+
+            case "renderPageLayers": {
+                ensureInitialized();
+                // Skip renders for documents that were unloaded while queued
+                if (!wasm!.has_document(request.documentId)) {
+                    respond({
+                        type: "renderPageLayers",
+                        success: false,
+                        error: `Document not found: ${request.documentId}`,
+                    });
+                    break;
+                }
+                const layers = wasm!.render_page_layers(
+                    request.documentId,
+                    request.pageIndex,
+                    request.width,
+                    request.height,
+                );
+                // Transfer each layer's pixels rather than copying them; the
+                // rasters are large and the worker has no further use for them.
+                const transfer = (layers ?? [])
+                    .map((layer) => layer.rgba.buffer)
+                    .filter((buffer): buffer is ArrayBuffer => buffer instanceof ArrayBuffer);
+                respond({ type: "renderPageLayers", success: true, layers }, transfer);
                 break;
             }
 

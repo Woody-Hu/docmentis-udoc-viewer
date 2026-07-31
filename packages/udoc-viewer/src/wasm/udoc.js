@@ -985,6 +985,46 @@ export class Wasm {
         return takeObject(ret);
     }
     /**
+     * Render a page as separate animation layers, back-to-front.
+     *
+     * Each animated shape gets its own layer and each run of static frames
+     * between them gets another, so drawing the layers in order reproduces
+     * the page exactly while leaving each animated shape independently
+     * transformable. Rasters are cropped to their content; `x` and `y` give
+     * the offset within the page.
+     *
+     * Returns `undefined` when the page has no animations — render it with
+     * `render_page_to_rgba` instead.
+     * @param {string} id
+     * @param {number} page_index
+     * @param {number} width
+     * @param {number} height
+     * @returns {JsAnimationLayer[] | undefined}
+     */
+    render_page_layers(id, page_index, width, height) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            const ptr0 = passStringToWasm0(id, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+            const len0 = WASM_VECTOR_LEN;
+            wasm.wasm_render_page_layers(retptr, this.__wbg_ptr, ptr0, len0, page_index, width, height);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+            var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+            if (r3) {
+                throw takeObject(r2);
+            }
+            let v2;
+            if (r0 !== 0) {
+                v2 = getArrayJsValueFromWasm0(r0, r1).slice();
+                wasm.__wbindgen_export4(r0, r1 * 4, 4);
+            }
+            return v2;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
      * Render a page to PNG bytes.
      *
      * # Arguments
@@ -1126,6 +1166,34 @@ export class Wasm {
         const ptr0 = passStringToWasm0(distinct_id, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len0 = WASM_VECTOR_LEN;
         wasm.wasm_setup_telemetry(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * Get the build sequence of a page (PPTX slide animations).
+     *
+     * Returns `undefined` for pages without animations, which is every page
+     * of a PDF, DOCX or XLSX and most PPTX slides. Loading is lazy — unlike
+     * transitions on `page_info`, this triggers a full page load, so call it
+     * only for the page being displayed.
+     * @param {string} id
+     * @param {number} page_index
+     * @returns {JsSlideAnimation | undefined}
+     */
+    slide_animation(id, page_index) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            const ptr0 = passStringToWasm0(id, wasm.__wbindgen_export, wasm.__wbindgen_export2);
+            const len0 = WASM_VECTOR_LEN;
+            wasm.wasm_slide_animation(retptr, this.__wbg_ptr, ptr0, len0, page_index);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+            if (r2) {
+                throw takeObject(r1);
+            }
+            return takeObject(r0);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
     }
     /**
      * Get viewer preferences embedded in the document.
@@ -1426,6 +1494,10 @@ function __wbg_get_imports() {
             const ret = getObject(arg0).finish(getObject(arg1));
             return addHeapObject(ret);
         },
+        __wbg_from_d300fe49deab18f5: function(arg0) {
+            const ret = Array.from(getObject(arg0));
+            return addHeapObject(ret);
+        },
         __wbg_getDate_3d2f964145b3449d: function(arg0) {
             const ret = getObject(arg0).getDate();
             return ret;
@@ -1607,7 +1679,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return __wasm_bindgen_func_elem_22925(a, state0.b, arg0, arg1);
+                        return __wasm_bindgen_func_elem_34633(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -1641,7 +1713,7 @@ function __wbg_get_imports() {
                     const a = state0.a;
                     state0.a = 0;
                     try {
-                        return __wasm_bindgen_func_elem_22925(a, state0.b, arg0, arg1);
+                        return __wasm_bindgen_func_elem_34633(a, state0.b, arg0, arg1);
                     } finally {
                         state0.a = a;
                     }
@@ -2100,13 +2172,13 @@ function __wbg_get_imports() {
             getObject(arg0).writeTexture(getObject(arg1), getObject(arg2), getObject(arg3), getObject(arg4));
         }, arguments); },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 1884, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_22923);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 259, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_3662);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000002: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 259, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_3585);
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 3052, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_34631);
             return addHeapObject(ret);
         },
         __wbindgen_cast_0000000000000003: function(arg0) {
@@ -2155,14 +2227,14 @@ function __wbg_get_imports() {
     };
 }
 
-function __wasm_bindgen_func_elem_3585(arg0, arg1, arg2) {
-    wasm.__wasm_bindgen_func_elem_3585(arg0, arg1, addHeapObject(arg2));
+function __wasm_bindgen_func_elem_3662(arg0, arg1, arg2) {
+    wasm.__wasm_bindgen_func_elem_3662(arg0, arg1, addHeapObject(arg2));
 }
 
-function __wasm_bindgen_func_elem_22923(arg0, arg1, arg2) {
+function __wasm_bindgen_func_elem_34631(arg0, arg1, arg2) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.__wasm_bindgen_func_elem_22923(retptr, arg0, arg1, addHeapObject(arg2));
+        wasm.__wasm_bindgen_func_elem_34631(retptr, arg0, arg1, addHeapObject(arg2));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         if (r1) {
@@ -2173,8 +2245,8 @@ function __wasm_bindgen_func_elem_22923(arg0, arg1, arg2) {
     }
 }
 
-function __wasm_bindgen_func_elem_22925(arg0, arg1, arg2, arg3) {
-    wasm.__wasm_bindgen_func_elem_22925(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
+function __wasm_bindgen_func_elem_34633(arg0, arg1, arg2, arg3) {
+    wasm.__wasm_bindgen_func_elem_34633(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
 

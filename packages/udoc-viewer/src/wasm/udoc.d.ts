@@ -55,6 +55,63 @@ export interface JsRect {
 }
 
 /**
+ * A single effect applied to one target.
+ */
+export interface JsAnimationEffect {
+    /**
+     * The shape whose layers this effect animates.
+     */
+    shapeKey: number;
+    /**
+     * What part of the shape the effect covers.
+     */
+    target: JsAnimationTarget;
+    class: JsEffectClass;
+    /**
+     * What the effect\'s behaviors do, as described by the file itself.
+     * Prefer this over the preset ids, which are an opaque catalog.
+     */
+    behavior?: JsEffectBehavior;
+    /**
+     * PowerPoint preset id, for the viewer\'s effect catalog.
+     */
+    presetId?: number;
+    /**
+     * PowerPoint preset subtype, usually a direction or variant.
+     */
+    presetSubtype?: number;
+    /**
+     * Start offset from the beginning of the step, in milliseconds.
+     */
+    startMs: number;
+    durationMs: number;
+    /**
+     * Iterations to play, or `null` to repeat until the step is left.
+     */
+    repeatCount: number | undefined;
+    /**
+     * Fraction of the duration spent easing in, 0–1.
+     */
+    accelerate: number;
+    /**
+     * Fraction of the duration spent easing out, 0–1.
+     */
+    decelerate: number;
+    autoReverse: boolean;
+}
+
+/**
+ * A slide\'s build sequence: one entry in `steps` per click.
+ */
+export interface JsSlideAnimation {
+    steps: JsAnimationStep[];
+    /**
+     * Time-tree constructs recognized but not represented, for diagnostics.
+     */
+    skipped: string[];
+}
+
+/**
  * Annotation for JavaScript serialization.
  */
 export interface JsAnnotation extends JsAnnotationType {
@@ -102,6 +159,22 @@ export type JsDestinationDisplay = { type: "xyz"; left: number | undefined; top:
 export interface JsDestination {
     pageIndex: number;
     display: JsDestinationDisplay;
+}
+
+/**
+ * Effect category, which determines the target\'s resting state.
+ */
+export type JsEffectClass = "entrance" | "exit" | "emphasis" | "motionPath" | "verb" | "mediaCall";
+
+/**
+ * Everything one click sets in motion.
+ */
+export interface JsAnimationStep {
+    effects: JsAnimationEffect[];
+    /**
+     * How long the whole step runs, in milliseconds.
+     */
+    durationMs: number;
 }
 
 /**
@@ -197,6 +270,38 @@ export interface JsMarkupMetadata {
  * transparent Tsify wrapper.
  */
 export type JsCompositions = JsPick[][];
+
+/**
+ * One layer of a page, rasterized on its own so it can be animated.
+ *
+ * Layers arrive back-to-front; drawing them in order at `(x, y)` over a
+ * transparent surface reproduces the full page.
+ */
+export interface JsAnimationLayer {
+    /**
+     * The animated shape this layer belongs to, absent for static content.
+     * Layers sharing a key must be animated together.
+     */
+    shapeKey?: number;
+    /**
+     * Left edge of the cropped raster within the page, in device pixels.
+     */
+    x: number;
+    /**
+     * Top edge of the cropped raster within the page, in device pixels.
+     */
+    y: number;
+    width: number;
+    height: number;
+    /**
+     * Premultiplied RGBA pixels, `width * height * 4` bytes long.
+     *
+     * Serialized as bytes rather than a plain `Vec`, so this crosses into JS
+     * as a `Uint8Array` whose buffer the worker can transfer. A layer raster
+     * is megabytes; a number array would be ruinous.
+     */
+    rgba: Uint8Array;
+}
 
 /**
  * Outline item for JavaScript serialization.
@@ -402,9 +507,27 @@ export interface JsVisibilityGroup {
     locked: boolean;
 }
 
+/**
+ * What an effect\'s behaviors do (discriminated union tagged by `type`).
+ */
+export type JsEffectBehavior = { type: "instant" } | { type: "filter"; name: string; option: string | undefined } | { type: "move" } | { type: "scale" } | { type: "rotate" } | { type: "color" };
+
+/**
+ * What part of a shape an effect covers (discriminated union tagged by `type`).
+ */
+export type JsAnimationTarget = { type: "shape" } | { type: "background" } | { type: "paragraphs"; start: number; end: number };
+
 export interface JsLayoutFrame {
     transform: JsTransform;
     parcel?: JsLayoutParcel;
+    /**
+     * Source shape that produced this frame (PPTX `cNvPr/@id`).
+     *
+     * Lets the viewer line up a frame\'s text layout with the animation
+     * layer for the same shape, which is how paragraph builds find the
+     * band to clip.
+     */
+    shapeKey?: number;
 }
 
 export interface JsLayoutGlyph {
@@ -983,6 +1106,19 @@ export class Wasm {
      */
     render_page_gpu(id: string, page_index: number, width: number, height: number): Promise<Uint8Array>;
     /**
+     * Render a page as separate animation layers, back-to-front.
+     *
+     * Each animated shape gets its own layer and each run of static frames
+     * between them gets another, so drawing the layers in order reproduces
+     * the page exactly while leaving each animated shape independently
+     * transformable. Rasters are cropped to their content; `x` and `y` give
+     * the offset within the page.
+     *
+     * Returns `undefined` when the page has no animations — render it with
+     * `render_page_to_rgba` instead.
+     */
+    render_page_layers(id: string, page_index: number, width: number, height: number): JsAnimationLayer[] | undefined;
+    /**
      * Render a page to PNG bytes.
      *
      * # Arguments
@@ -1043,6 +1179,15 @@ export class Wasm {
      * * `distinct_id` - Anonymous UUID for per-user tracking (persisted in localStorage)
      */
     setup_telemetry(distinct_id: string): void;
+    /**
+     * Get the build sequence of a page (PPTX slide animations).
+     *
+     * Returns `undefined` for pages without animations, which is every page
+     * of a PDF, DOCX or XLSX and most PPTX slides. Loading is lazy — unlike
+     * transitions on `page_info`, this triggers a full page load, so call it
+     * only for the page being displayed.
+     */
+    slide_animation(id: string, page_index: number): JsSlideAnimation | undefined;
     /**
      * Get viewer preferences embedded in the document.
      *
@@ -1127,15 +1272,17 @@ export interface InitOutput {
     readonly wasm_registerFonts: (a: number, b: number, c: number, d: number) => void;
     readonly wasm_remove_document: (a: number, b: number, c: number) => number;
     readonly wasm_render_page_gpu: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly wasm_render_page_layers: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly wasm_render_page_to_png: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly wasm_render_page_to_rgba: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly wasm_set_license: (a: number, b: number, c: number) => number;
     readonly wasm_set_visibility_group_visible: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
     readonly wasm_setup_telemetry: (a: number, b: number, c: number) => void;
+    readonly wasm_slide_animation: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly wasm_viewer_preferences: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_22923: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_22925: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_3585: (a: number, b: number, c: number) => void;
+    readonly __wasm_bindgen_func_elem_34631: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_34633: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3662: (a: number, b: number, c: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

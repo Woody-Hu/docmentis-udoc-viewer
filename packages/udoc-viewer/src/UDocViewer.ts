@@ -492,6 +492,7 @@ export class UDocViewer {
         if (options.minZoom !== undefined) overrides.minZoom = options.minZoom;
         if (options.maxZoom !== undefined) overrides.maxZoom = options.maxZoom;
         if (options.enableTransitions) overrides.transitionsEnabled = true;
+        if (options.enableAnimations) overrides.animationsEnabled = true;
 
         // Collect individually disabled panels into the internal Set
         const disabled: PanelTab[] = [];

@@ -358,6 +358,8 @@ export interface ViewerState {
     textSelectionDisabled: boolean;
     /** Whether slide transition animations are enabled (PPTX only) */
     transitionsEnabled: boolean;
+    /** Whether slide build sequences are enabled (PPTX only) */
+    animationsEnabled: boolean;
     /** Minimum zoom level */
     minZoom: number;
     /** Maximum zoom level */
@@ -508,6 +510,7 @@ export const initialState: ViewerState = {
     themeSwitchingDisabled: false,
     textSelectionDisabled: false,
     transitionsEnabled: false,
+    animationsEnabled: false,
     minZoom: DEFAULT_ZOOM_STEPS[0],
     maxZoom: DEFAULT_ZOOM_STEPS[DEFAULT_ZOOM_STEPS.length - 1],
 

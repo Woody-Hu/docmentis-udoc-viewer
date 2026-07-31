@@ -69,6 +69,8 @@ interface PageSlotElement {
     container: HTMLDivElement;
     canvas: HTMLCanvasElement | null;
     previewCanvas: HTMLCanvasElement | null;
+    /** Host for PPTX animation layer canvases; empty unless a build is playing. */
+    animationLayerHost: HTMLDivElement | null;
     textLayer: HTMLDivElement | null;
     annotationLayer: HTMLDivElement | null;
     searchHighlightLayer: HTMLDivElement | null;
@@ -211,6 +213,17 @@ export function createSpread(
             canvas.textContent = i18n ? i18n.t("spread.pageLabel", { page: pageNumber }) : `Page ${pageNumber}`;
             container.appendChild(canvas);
 
+            // Animation layer host (above canvas, below text) — holds the
+            // per-shape canvases while a PPTX build sequence is playing.
+            const animationLayerHost = document.createElement("div");
+            animationLayerHost.className = "udoc-spread__animation-layer-host";
+            animationLayerHost.style.position = "absolute";
+            animationLayerHost.style.transformOrigin = "center";
+            animationLayerHost.style.pointerEvents = "none";
+            animationLayerHost.style.display = "none";
+            animationLayerHost.setAttribute("aria-hidden", "true");
+            container.appendChild(animationLayerHost);
+
             // Text layer (above canvas, below annotations) - for text selection
             const textLayer = document.createElement("div");
             textLayer.className = "udoc-spread__text-layer";
@@ -309,6 +322,7 @@ export function createSpread(
                 container,
                 canvas,
                 previewCanvas,
+                animationLayerHost,
                 textLayer,
                 annotationLayer,
                 searchHighlightLayer,
@@ -341,6 +355,7 @@ export function createSpread(
             container,
             canvas: null,
             previewCanvas: null,
+            animationLayerHost: null,
             textLayer: null,
             annotationLayer: null,
             searchHighlightLayer: null,
@@ -545,6 +560,16 @@ export function createSpread(
                 slotEl.canvas.style.left = formatCssSize(centerLeft);
                 slotEl.canvas.style.top = formatCssSize(centerTop);
                 slotEl.canvas.style.transform = effectiveRotation === 0 ? "none" : `rotate(${effectiveRotation}deg)`;
+            }
+
+            // Keep the animation host aligned with the canvas it replaces
+            if (slotEl.animationLayerHost) {
+                slotEl.animationLayerHost.style.width = formatCssSize(slotEl.cssWidth);
+                slotEl.animationLayerHost.style.height = formatCssSize(slotEl.cssHeight);
+                slotEl.animationLayerHost.style.left = formatCssSize(centerLeft);
+                slotEl.animationLayerHost.style.top = formatCssSize(centerTop);
+                slotEl.animationLayerHost.style.transform =
+                    effectiveRotation === 0 ? "none" : `rotate(${effectiveRotation}deg)`;
             }
 
             // Update text layer to match canvas position/transform
@@ -903,11 +928,32 @@ export function createSpread(
         }
     }
 
+    /**
+     * Elements a slide build needs: the host its layers mount into and the
+     * plain canvas they stand in for. Null when the page is not in this spread.
+     */
+    function getAnimationTargets(
+        pageNumber: number,
+    ): { host: HTMLElement; canvas: HTMLElement; cssWidth: number; cssHeight: number } | null {
+        for (const slotEl of slotElements) {
+            if (slotEl.pageNumber !== pageNumber) continue;
+            if (!slotEl.animationLayerHost || !slotEl.canvas) return null;
+            return {
+                host: slotEl.animationLayerHost,
+                canvas: slotEl.canvas,
+                cssWidth: slotEl.cssWidth,
+                cssHeight: slotEl.cssHeight,
+            };
+        }
+        return null;
+    }
+
     return {
         el,
         mount,
         destroy,
         render,
+        getAnimationTargets,
         updateLayout,
         updateAnnotations,
         updateTextLayer,

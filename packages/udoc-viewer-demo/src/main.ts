@@ -7,6 +7,7 @@ interface SampleDocument {
     path: string;
     viewerOptions?: {
         enableTransitions?: boolean;
+        enableAnimations?: boolean;
     };
 }
 
@@ -38,9 +39,16 @@ const sampleCategories: SampleCategory[] = [
         documents: [
             { name: "James Webb Space Telescope", path: "./james-webb-space-telescope.pptx" },
             {
+                // Each demo turns its own feature on and the other off, so the
+                // deck shows only what it is meant to demonstrate.
                 name: "Slide Transition Demo (Beta)",
                 path: "./transition-demo.pptx",
-                viewerOptions: { enableTransitions: true },
+                viewerOptions: { enableTransitions: true, enableAnimations: false },
+            },
+            {
+                name: "Slide Animation Demo (Beta)",
+                path: "./animation-demo.pptx",
+                viewerOptions: { enableAnimations: true, enableTransitions: false },
             },
         ],
     },
@@ -84,6 +92,7 @@ let memoryOverlayUnsubOOM: (() => void) | null = null;
 let oomCount = 0;
 let lastOOMMessage: string | null = null;
 let enableTransitions = false;
+let enableAnimations = false;
 let disableViewTools = false;
 let disableAnnotateTools = false;
 let enableMarkupTools = false;
@@ -227,6 +236,7 @@ async function createViewer() {
     viewer = await client.createViewer({
         container: viewerContainer,
         enableTransitions,
+        enableAnimations,
         disableViewTools,
         disableAnnotateTools,
         __experimentalDisableMarkupTools: !enableMarkupTools,
@@ -288,6 +298,11 @@ async function loadDocument(
     docNameEl.textContent = doc.name;
 
     // Apply per-document viewer options
+    if (doc.viewerOptions?.enableAnimations !== undefined) {
+        enableAnimations = doc.viewerOptions.enableAnimations;
+        const cb = document.querySelector<HTMLInputElement>('[data-option-id="animations"]');
+        if (cb) cb.checked = enableAnimations;
+    }
     if (doc.viewerOptions?.enableTransitions !== undefined) {
         enableTransitions = doc.viewerOptions.enableTransitions;
         const cb = document.querySelector<HTMLInputElement>('[data-option-id="transitions"]');
@@ -556,6 +571,16 @@ const OPTION_GROUPS: ToggleGroup[] = [
                 onChange: async (checked) => {
                     enableTransitions = checked;
                     // Transition setting is applied at viewer creation — must recreate
+                    await createViewer();
+                },
+            },
+            {
+                id: "animations",
+                label: "Slide Animations (Beta)",
+                hint: "PPTX only — click to build",
+                onChange: async (checked) => {
+                    enableAnimations = checked;
+                    // Applied at viewer creation, like transitions — recreate
                     await createViewer();
                 },
             },
