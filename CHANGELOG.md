@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.12] - 2026-07-31
+
 ### Features
 
 - PowerPoint slide build sequences now play in the viewer (beta): a click, wheel scroll, or the toolbar's next button advances the slide through its animation steps before moving on to the next slide. Shapes animate individually with zoom, wipe, fade, and dissolve effects, text builds paragraph by paragraph, and effects the viewer does not recognize fall back to a fade so a deck still builds in the right order. Decks that disable advance-on-click are honoured. Off by default — enable with the `enableAnimations` viewer option
