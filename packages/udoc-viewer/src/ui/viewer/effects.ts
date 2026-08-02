@@ -256,45 +256,141 @@ export function createEffects(store: Store<ViewerState, Action>, engine: EngineA
 
     // Search text loading effect: load ALL page text when a search query is set
     // or the search panel is opened. Supports both built-in panel and external API usage.
+    //
+    // Incremented on every extraction run; a run bails out once it no longer
+    // matches, so a superseded query or page range cannot mark the document
+    // searchable on behalf of the current one.
+    let searchGeneration = 0;
+
+    // Cleanup callbacks for waits currently parked on page text owned by the
+    // on-demand text effect. destroy() must release them, or the awaiting
+    // closures (and the state they capture) are never collected.
+    const pendingTextWaiters = new Set<() => void>();
+
+    // Upper bound on a single parked wait. A request that never settles must not
+    // strand the search panel in a permanent loading state; give up on that page
+    // and finish with the text we have.
+    const PAGE_TEXT_WAIT_TIMEOUT_MS = 10000;
+
+    /**
+     * Resolve once `pageIndex` is no longer being loaded by another effect, or as
+     * soon as `isStale()` reports the waiting run has been retired. Resolves (never
+     * rejects) in both cases — the caller re-checks staleness afterwards.
+     */
+    const waitForPageText = (pageIndex: number, isStale: () => boolean): Promise<void> =>
+        new Promise<void>((resolve) => {
+            let unsubscribe: (() => void) | null = null;
+            let timer: ReturnType<typeof setTimeout> | null = null;
+
+            const release = () => {
+                pendingTextWaiters.delete(release);
+                unsubscribe?.();
+                unsubscribe = null;
+                if (timer !== null) clearTimeout(timer);
+                timer = null;
+                resolve();
+            };
+
+            const finishIfSettled = () => {
+                const current = store.getState();
+                // A page can leave textLoading without landing in pageText or
+                // textFailed (CLEAR_PAGE_TEXT_LOADING), so "no longer owned by
+                // anyone" is the condition to wait on — not a positive result.
+                const settled =
+                    current.pageText.has(pageIndex) ||
+                    current.textFailed.has(pageIndex) ||
+                    !current.textLoading.has(pageIndex);
+                if (!settled && !isStale()) return;
+                release();
+            };
+
+            pendingTextWaiters.add(release);
+            unsubscribe = store.subscribeEffect(finishIfSettled);
+            timer = setTimeout(release, PAGE_TEXT_WAIT_TIMEOUT_MS);
+            // The page may already have settled between the check that parked us
+            // here and this subscription.
+            finishIfSettled();
+        });
+
     unsubscribers.push(
         store.subscribeEffect(async (prev, next) => {
             if (!next.doc) return;
 
             const searchJustOpened = next.activePanel === "search" && prev.activePanel !== "search";
             const docLoadedWithSearchOpen = next.activePanel === "search" && prev.doc !== next.doc;
-            const queryJustSet = next.searchQuery !== "" && prev.searchQuery === "";
+            const queryChanged = next.searchQuery !== "" && prev.searchQuery !== next.searchQuery;
             const docLoadedWithQuery = next.searchQuery !== "" && prev.doc !== next.doc;
             const rangeChangedWithQuery = next.searchQuery !== "" && prev.searchPageRange !== next.searchPageRange;
 
             if (
                 !searchJustOpened &&
                 !docLoadedWithSearchOpen &&
-                !queryJustSet &&
+                !queryChanged &&
                 !docLoadedWithQuery &&
                 !rangeChangedWithQuery
             )
                 return;
-            if (next.searchTextLoaded || next.searchTextLoading) return;
+            // searchTextLoading is deliberately not a bail-out condition: a run
+            // already in flight may be scoped to a superseded query or page range,
+            // and dropping this one would let that narrower run declare the
+            // document searchable. searchGeneration retires the old run instead.
+            if (next.searchTextLoaded) return;
 
             const gen = docGeneration;
-            const startPage = next.searchPageRange ? Math.max(0, next.searchPageRange.start) : 0;
-            const endPage = next.searchPageRange
-                ? Math.min(next.pageCount - 1, next.searchPageRange.end)
-                : next.pageCount - 1;
+            const searchGen = ++searchGeneration;
+            const query = next.searchQuery;
+            const pageRange = next.searchPageRange;
+
+            // searchPageRange is compared by identity; the reducer keeps identity
+            // stable when a dispatched range is equal to the current one.
+            const isCurrentSearch = () => {
+                const current = store.getState();
+                return (
+                    searchGen === searchGeneration &&
+                    current.searchQuery === query &&
+                    current.searchPageRange === pageRange
+                );
+            };
+            const isStale = () => destroyed || gen !== docGeneration || !isCurrentSearch();
+            const stopIfStale = () => {
+                if (!isStale()) return false;
+                // Clearing the query does not start a successor run, so this run
+                // has to release the loading flag on its way out. Every other way
+                // of going stale hands ownership to a newer run.
+                if (!destroyed && searchGen === searchGeneration && store.getState().searchQuery === "") {
+                    store.dispatch({ type: "SET_SEARCH_TEXT_LOADING", loading: false });
+                }
+                return true;
+            };
+
+            const startPage = pageRange ? Math.max(0, pageRange.start) : 0;
+            const endPage = pageRange ? Math.min(next.pageCount - 1, pageRange.end) : next.pageCount - 1;
+            // Pages the on-demand text effect is already extracting. Awaited after
+            // the main loop so this run does not declare the document searchable
+            // before they land.
+            const pendingPageText: number[] = [];
             store.dispatch({ type: "SET_SEARCH_TEXT_LOADING", loading: true });
 
             for (let pageIndex = startPage; pageIndex <= endPage; pageIndex++) {
-                if (gen !== docGeneration) return;
+                if (stopIfStale()) return;
                 const currentState = store.getState();
                 if (currentState.pageText.has(pageIndex)) continue;
-                if (currentState.textLoading.has(pageIndex)) continue;
+                if (currentState.textLoading.has(pageIndex)) {
+                    pendingPageText.push(pageIndex);
+                    continue;
+                }
                 if (currentState.textFailed.has(pageIndex)) continue;
 
                 store.dispatch({ type: "LOAD_PAGE_TEXT", pageIndex });
                 try {
                     const text = await engine.getLayoutPage(next.doc!, pageIndex);
-                    if (gen !== docGeneration) return;
+                    if (destroyed || gen !== docGeneration) return;
+                    // Page text is query-independent, so cache completed work even
+                    // when this run has been retired — and always clear the
+                    // textLoading entry a newer run may be parked on.
+                    const searchWentStale = stopIfStale();
                     store.dispatch({ type: "SET_PAGE_TEXT", pageIndex, text });
+                    if (searchWentStale) return;
                 } catch (error) {
                     if (destroyed || gen !== docGeneration) return;
                     console.error(`Failed to load text for page ${pageIndex}`, error);
@@ -302,7 +398,13 @@ export function createEffects(store: Store<ViewerState, Action>, engine: EngineA
                 }
             }
 
-            if (destroyed || gen !== docGeneration) return;
+            for (const pageIndex of pendingPageText) {
+                if (stopIfStale()) return;
+                await waitForPageText(pageIndex, isStale);
+                if (stopIfStale()) return;
+            }
+
+            if (stopIfStale()) return;
             store.dispatch({ type: "SET_SEARCH_TEXT_LOADING", loading: false });
             store.dispatch({ type: "SET_SEARCH_TEXT_LOADED", loaded: true });
         }),
@@ -319,8 +421,13 @@ export function createEffects(store: Store<ViewerState, Action>, engine: EngineA
                 prev.searchFuzzy !== next.searchFuzzy;
             const textChanged = prev.pageText !== next.pageText;
             const rangeChanged = prev.searchPageRange !== next.searchPageRange;
+            // When every page was already cached the extraction run dispatches no
+            // page text at all, so this is the only signal that the document just
+            // became fully searchable — search() waits on a matches update after
+            // searchTextLoaded flips.
+            const textLoadedChanged = prev.searchTextLoaded !== next.searchTextLoaded;
 
-            if (!queryChanged && !textChanged && !rangeChanged) return;
+            if (!queryChanged && !textChanged && !rangeChanged && !textLoadedChanged) return;
 
             if (!next.searchQuery.trim()) {
                 if (next.searchMatches.length > 0) {
@@ -380,6 +487,12 @@ export function createEffects(store: Store<ViewerState, Action>, engine: EngineA
             destroyed = true;
             for (const unsub of unsubscribers) {
                 unsub();
+            }
+            // Release parked text waits: their subscriptions are not in
+            // `unsubscribers`, and the pages they wait on are left in textLoading
+            // when in-flight worker requests reject during teardown.
+            for (const release of [...pendingTextWaiters]) {
+                release();
             }
             // Note: workerClient is not destroyed here - it's shared across viewers
             // and owned by UDocClient
