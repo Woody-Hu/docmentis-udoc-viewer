@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.13] - 2026-08-04
+
 ### Bug Fixes
 
 - Fixed search on large documents ignoring a changed or cleared query: text extraction now stops as soon as a newer search supersedes it, instead of grinding through every remaining page while the loading indicator stayed on and highlights for the abandoned query kept appearing
