@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.14] - 2026-08-06
+
 ### Bug Fixes
 
 - Fixed self-hosted deployments (`baseUrl`) failing to start after an upgrade when only one of `worker.js` and `udoc_bg.wasm` was served fresh and the other came from a CDN or browser cache: both files are now requested with a `?v=<version>` query, so every release gets its own cache key and the two can no longer come from different versions
