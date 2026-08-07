@@ -5,6 +5,7 @@
  */
 
 import init, { Wasm, parseFontInfo } from "../wasm/udoc.js";
+import { describeInitError } from "./wasmError.js";
 import type {
     LicenseResult,
     JsOutlineSection as OutlineSection,
@@ -268,7 +269,12 @@ async function handleMessage(event: MessageEvent<WorkerRequest & { _id?: number 
     try {
         switch (request.type) {
             case "init": {
-                const exports = await init(request.wasmUrl ? { module_or_path: request.wasmUrl } : undefined);
+                let exports;
+                try {
+                    exports = await init(request.wasmUrl ? { module_or_path: request.wasmUrl } : undefined);
+                } catch (error) {
+                    throw describeInitError(error, request.wasmUrl, request.viewerVersion);
+                }
                 wasmMemory = (exports as { memory?: WebAssembly.Memory }).memory ?? null;
                 wasm = new Wasm(request.domain, request.viewerVersion);
                 if (request.gpu) {

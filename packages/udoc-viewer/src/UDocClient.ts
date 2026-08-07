@@ -561,7 +561,7 @@ export class UDocClient {
     static async create(options: ClientOptions = {}): Promise<UDocClient> {
         // Create worker client - use custom URL if provided, otherwise use bundled worker
         const workerClient = options.baseUrl
-            ? WorkerClient.createWithUrl(new URL("worker.js", options.baseUrl))
+            ? WorkerClient.createWithUrl(assetUrl("worker.js", options.baseUrl, UDocClient.version))
             : WorkerClient.create();
 
         // Initialize WASM in the worker.
@@ -573,7 +573,7 @@ export class UDocClient {
         const wasmUrls: string[] = [];
 
         if (options.baseUrl) {
-            wasmUrls.push(new URL("udoc_bg.wasm", options.baseUrl).href);
+            wasmUrls.push(assetUrl("udoc_bg.wasm", options.baseUrl, UDocClient.version));
         } else {
             try {
                 const meta = await import("./meta-url.js");
@@ -1171,6 +1171,27 @@ function removeDistinctId(): void {
     } catch {
         // localStorage unavailable — nothing to remove
     }
+}
+
+/**
+ * Resolve a self-hosted asset URL, stamped with the SDK version.
+ *
+ * Self-hosted deployments serve `worker.js` and `udoc_bg.wasm` under stable
+ * filenames, so an upgrade can be served half from cache — stale JS glue
+ * against a fresh engine binary, which fails to instantiate. The version
+ * query gives each release its own cache key.
+ *
+ * The stamp is skipped when running from source, where the build-time version
+ * placeholder hasn't been replaced.
+ *
+ * Exported for tests; not part of the public API.
+ */
+export function assetUrl(file: string, baseUrl: string, version: string): string {
+    const url = new URL(file, baseUrl);
+    if (/^\d/.test(version)) {
+        url.searchParams.set("v", version);
+    }
+    return url.href;
 }
 
 /**
