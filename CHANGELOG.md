@@ -6,6 +6,12 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed slide text in some PowerPoint presentations using the wrong colour and size — most visibly near-black text on a dark background, where the theme's own text styling should have applied (engine)
+- Fixed gradient fills rendering washed out in some presentations, where the gradient's centre point was placed incorrectly (engine)
+- Fixed gradients on non-rectangular shapes such as pie wedges being stretched across the whole shape frame instead of the drawn area (engine)
+
 ## [0.7.13] - 2026-08-04
 
 ### Bug Fixes
