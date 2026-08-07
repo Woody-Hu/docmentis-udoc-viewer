@@ -8,6 +8,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ### Bug Fixes
 
+- Fixed self-hosted deployments (`baseUrl`) failing to start after an upgrade when only one of `worker.js` and `udoc_bg.wasm` was served fresh and the other came from a CDN or browser cache: both files are now requested with a `?v=<version>` query, so every release gets its own cache key and the two can no longer come from different versions
+- A WASM engine that doesn't match the SDK now reports what actually went wrong — previously this surfaced as a raw `WebAssembly.instantiate(): Import #… function import requires a callable` naming an internal symbol, with nothing to indicate the two files came from different releases
 - Fixed slide text in some PowerPoint presentations using the wrong colour and size — most visibly near-black text on a dark background, where the theme's own text styling should have applied (engine)
 - Fixed gradient fills rendering washed out in some presentations, where the gradient's centre point was placed incorrectly (engine)
 - Fixed gradients on non-rectangular shapes such as pie wedges being stretched across the whole shape frame instead of the drawn area (engine)
