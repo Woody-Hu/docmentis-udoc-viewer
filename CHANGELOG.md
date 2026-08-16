@@ -11,6 +11,10 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 - Text runs in the layout model now carry `effectiveFontSize` alongside `fontSize`. In PDFs the existing `fontSize` is the operand of the `Tf` operator, which is only the rendered size when the text matrix has no scale of its own — reading it directly reports 6 pt for text drawn at 12 pt under a 2× matrix. `effectiveFontSize` is that value with the run transform's scale applied, so it is the size the text actually appears at on the page without any matrix arithmetic. For Word, PowerPoint, Excel and CSV documents the two are always equal (engine)
 - Frames in the layout model now report what part of the page they are, as `type: "body" | "header" | "footer" | "shape"`, so text taken from `getLayoutPage()` can be attributed to a running header or footer rather than the document body. Word and Excel pages are composed by the engine and distinguish all three regions; PDF and PowerPoint frames come from the file itself and report `shape` (engine)
 
+### Performance
+
+- Documents that embed their fonts now use noticeably less memory: each embedded font's data was held twice for the lifetime of the document, and is now shared, close to halving what a font-heavy document holds for them. Fonts supplied as plain OpenType data are also read with two fewer copies (engine)
+
 ## [0.7.14] - 2026-08-06
 
 ### Bug Fixes
