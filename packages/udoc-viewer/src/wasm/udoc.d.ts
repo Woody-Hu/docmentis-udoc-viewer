@@ -485,6 +485,18 @@ export interface LicenseResult {
 export type JsPageGroupLayout = { type: "linear" } | { type: "tiled"; rows: number; cols: number };
 
 /**
+ * Text run content.
+ *
+ * `fontSize`, `ascent` and `descent` are in the run\'s own text space, before
+ * `JsLayoutRun.transform` is applied. For reflow layouts (DOCX/PPTX/XLSX/CSV)
+ * that transform is identity, so they are already page-space points. For PDF
+ * the transform carries the scale of the text matrix and CTM, so the raw
+ * `fontSize` is the operand of the `Tf` operator, not the rendered size —
+ * use `effectiveFontSize` for that.
+ */
+export type JsLayoutRunContent = { type: "glyphs"; text: string; fontSize: number; effectiveFontSize: number; ascent: number; descent: number; glyphs: JsLayoutGlyph[] } | { type: "space"; advance: number; fontSize: number; effectiveFontSize: number; ascent: number; descent: number } | { type: "tab"; advance: number; fontSize: number; effectiveFontSize: number; ascent: number; descent: number } | { type: "paragraphEnd"; advance: number } | { type: "break" } | { type: "inlineDrawing"; width: number; height: number };
+
+/**
  * Tile position in a 2D page grid.
  */
 export interface JsTilePos {
@@ -517,7 +529,21 @@ export type JsEffectBehavior = { type: "instant" } | { type: "filter"; name: str
  */
 export type JsAnimationTarget = { type: "shape" } | { type: "background" } | { type: "paragraphs"; start: number; end: number };
 
+/**
+ * What part of the page a frame represents.
+ */
+export type JsLayoutFrameType = "body" | "header" | "footer" | "shape";
+
 export interface JsLayoutFrame {
+    /**
+     * What part of the page this frame is.
+     *
+     * Word and Excel documents are laid out by the engine, so their frames
+     * are tagged `body`, `header` or `footer`. PDF and PowerPoint frames
+     * come from the file itself and are always `shape` — a PowerPoint shape
+     * or a PDF content object.
+     */
+    type: JsLayoutFrameType;
     transform: JsTransform;
     parcel?: JsLayoutParcel;
     /**
@@ -662,8 +688,6 @@ export type JsGlitterPattern = "diamond" | "hexagon";
 export type JsInOutDirection = "in" | "out";
 
 export type JsLayoutLineContent = ({ type: "runList" } & JsLayoutRunList) | ({ type: "table" } & JsLayoutTable);
-
-export type JsLayoutRunContent = { type: "glyphs"; text: string; fontSize: number; ascent: number; descent: number; glyphs: JsLayoutGlyph[] } | { type: "space"; advance: number; fontSize: number; ascent: number; descent: number } | { type: "tab"; advance: number; fontSize: number; ascent: number; descent: number } | { type: "paragraphEnd"; advance: number } | { type: "break" } | { type: "inlineDrawing"; width: number; height: number };
 
 export type JsMorphOption = "byObject" | "byWord" | "byChar";
 
@@ -1280,9 +1304,9 @@ export interface InitOutput {
     readonly wasm_setup_telemetry: (a: number, b: number, c: number) => void;
     readonly wasm_slide_animation: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly wasm_viewer_preferences: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_34630: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_34632: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_3662: (a: number, b: number, c: number) => void;
+    readonly __wasm_bindgen_func_elem_34676: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_34678: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_3671: (a: number, b: number, c: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number) => void;

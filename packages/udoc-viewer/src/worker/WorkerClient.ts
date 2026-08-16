@@ -40,6 +40,7 @@ import type {
     JsFontSource as FontSource,
     JsResolvedFontInfo as ResolvedFontInfo,
     JsLayoutFrame as LayoutFrame,
+    JsLayoutFrameType as LayoutFrameType,
     JsLayoutParcel as LayoutParcel,
     JsLayoutLine as LayoutLine,
     JsLayoutRun as LayoutRun,
@@ -101,6 +102,7 @@ export type { SlideAnimation, AnimationLayer, AnimationStep, AnimationEffect, An
 export type {
     LayoutPage,
     LayoutFrame,
+    LayoutFrameType,
     LayoutParcel,
     LayoutLine,
     LayoutRun,

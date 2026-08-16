@@ -27,6 +27,7 @@ export type {
     FontUsageEntry,
     LayoutPage,
     LayoutFrame,
+    LayoutFrameType,
     LayoutParcel,
     LayoutLine,
     LayoutRun,

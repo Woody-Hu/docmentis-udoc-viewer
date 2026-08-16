@@ -47,9 +47,9 @@ export const wasm_set_visibility_group_visible: (a: number, b: number, c: number
 export const wasm_setup_telemetry: (a: number, b: number, c: number) => void;
 export const wasm_slide_animation: (a: number, b: number, c: number, d: number, e: number) => void;
 export const wasm_viewer_preferences: (a: number, b: number, c: number, d: number) => void;
-export const __wasm_bindgen_func_elem_34630: (a: number, b: number, c: number, d: number) => void;
-export const __wasm_bindgen_func_elem_34632: (a: number, b: number, c: number, d: number) => void;
-export const __wasm_bindgen_func_elem_3662: (a: number, b: number, c: number) => void;
+export const __wasm_bindgen_func_elem_34676: (a: number, b: number, c: number, d: number) => void;
+export const __wasm_bindgen_func_elem_34678: (a: number, b: number, c: number, d: number) => void;
+export const __wasm_bindgen_func_elem_3671: (a: number, b: number, c: number) => void;
 export const __wbindgen_export: (a: number, b: number) => number;
 export const __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
 export const __wbindgen_export3: (a: number) => void;
