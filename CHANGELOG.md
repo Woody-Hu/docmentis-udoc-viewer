@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.15] - 2026-08-15
+
 ### Features
 
 - Text runs in the layout model now carry `effectiveFontSize` alongside `fontSize`. In PDFs the existing `fontSize` is the operand of the `Tf` operator, which is only the rendered size when the text matrix has no scale of its own — reading it directly reports 6 pt for text drawn at 12 pt under a 2× matrix. `effectiveFontSize` is that value with the run transform's scale applied, so it is the size the text actually appears at on the page without any matrix arithmetic. For Word, PowerPoint, Excel and CSV documents the two are always equal (engine)
