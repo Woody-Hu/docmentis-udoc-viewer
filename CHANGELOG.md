@@ -6,6 +6,12 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Fixed pictures inside a group that scales its contents in PowerPoint presentations losing their crop shape — a portrait cropped to a circle or other non-rectangular outline rendered as the full uncropped rectangle (engine)
+- Fixed superscript and subscript text in Word documents rendering at full size on the normal baseline, instead of smaller and raised or lowered as Word draws it (engine)
+- Fixed documents that ask for a font whose name is published in more than one language falling back to a substitute typeface: several common Korean and Chinese system fonts could not be matched under the name a document actually writes (engine)
+
 ## [0.7.15] - 2026-08-15
 
 ### Features
