@@ -6,6 +6,8 @@ This project includes changes from both the **viewer** (this repo) and the **eng
 
 ## [Unreleased]
 
+## [0.7.16] - 2026-08-23
+
 ### Bug Fixes
 
 - Fixed pictures inside a group that scales its contents in PowerPoint presentations losing their crop shape — a portrait cropped to a circle or other non-rectangular outline rendered as the full uncropped rectangle (engine)
