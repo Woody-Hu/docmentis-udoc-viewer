@@ -36,6 +36,7 @@
 ### A. 测试基建 + 纯函数单测扩充（推荐，优先级最高）
 
 **现状（已核实）**：
+
 - `package.json` 根有 `test: vitest run`；SDK 有 `test/` 目录，仅 3 个文件：`search.test.ts`、`spreadLayout.test.ts`、`tool-change.test.ts`。
 - `.github/workflows/ci.yml` 的 `check` job 只跑 `typecheck` / `lint` / `format:check` / `build`，**没有 `npm test`**。即 CI 完全不会发现测试回归。
 - 核心状态机 `packages/udoc-viewer/src/ui/viewer/reducer.ts#L6` 是**纯函数** `reducer(state, action): ViewerState`（`switch(action.type)` 派发，无副作用），是低成本、高价值的目标——但当前**没有任何 reducer 单测**。
@@ -43,6 +44,7 @@
 **可验证性**：本环境已具备 Node 24 + vitest，可直接 `npm run build --workspace packages/udoc-viewer && vitest` 运行反馈，无需浏览器。
 
 **落地步骤**：
+
 1. 在 `ci.yml` 增加 `npm test`。
 2. 为 reducer 的关键分支补单测：`SET_DOC`（同步 viewDefaults/工具降级）、`SET_PAGE`（clamp 边界）、`CLEAR_DOC`（状态复位完整性）、搜索状态机、工具切换、面板可见性。reducer 为纯函数，可直接 `import { reducer, initialState }` 断言。
 
@@ -65,6 +67,7 @@ In addition, the core state reducer `reducer(state, action)` in
 side effects but currently has **zero** test coverage.
 
 Proposal:
+
 1. Add `npm test` to CI.
 2. Add unit tests for the reducer's key branches: `SET_DOC` (view defaults,
    tool downgrade when annotations unsupported), `SET_PAGE` (clamp at
@@ -79,6 +82,7 @@ Happy to open a PR if this is welcome.
 ### B. Headless 注释编辑可用性（TODO#2，精确修法已定位）
 
 **现状（已核实）**：
+
 - `UDocViewer` class 文档明确声明"Supports both UI mode (with container) and headless mode"——headless 模式是官方支持的能力。
 - **读路径已 headless 兼容**：`getPageAnnotations()` 用 `this.uiShell?.store` 可选链，回退到 `workerClient`（`UDocViewer.ts#L794`）。
 - **写路径未 headless 兼容**：`addPageAnnotation/updatePageAnnotation/removePageAnnotation` 均先 `ensureUiMode()`（无 container 直接抛错），再解引用 `this.uiShell!.store`（`UDocViewer.ts#L820-L868`）。注释编辑状态放在 UI shell store 里。
@@ -87,6 +91,7 @@ Happy to open a PR if this is welcome.
 **耦合点**：三类 editing 操作依赖 `uiShell.store`（store 是 UI shell 专属）。TODO.md 提议"把编辑状态上提，使其在无 container 时也可用，或显式文档化为只读"。
 
 **落地方向（可二选一）**：
+
 1. 若只想低成本收敛 → 明确在 API 文档/类型层面把注解编辑标注为"需 UI 模式"，避免使用者误解（当前仅 JSDoc 说明，缺少接口层提示）。
 2. 若做功能级贡献 → 引入与 UI shell 解耦的轻量编辑 store（或复用 worker 层状态），让 `add/update/removePageAnnotation` 在 headless 下也能增删并最终 `toBytes()` 保存。需引擎侧 `pdf_save_annotations` 已支持（已存在，见 CHANGELOG 0.6.23）。
 
@@ -122,6 +127,7 @@ the type/API level rather than a runtime throw). Noted in `TODO.md`.
 **现状（已核实）**：`locales` 强类型为 `Record<string, TranslationKeys>`（`i18n/index.ts#L18`），`TranslationKeys` 是扁平的 string 接口。因此**缺 key 会在编译期报错**——"补齐缺失翻译"这类贡献价值很低。
 
 **真正的可挖点**：
+
 1. **占位符插值校验**：`t()` 用 `{param}` 正则替换，若某 locale 的模板占位符与调用处参数名不一致，会静默漏替换。可写单测：对每个 key、每个 locale，校验 `{xxx}` 占位符集合一致。
 2. **回退解析覆盖**:`resolveLocale`（base-language fallback，如 `pt`→`pt-BR`、`zh-Hans`→`zh-CN`）目前无测试。
 
@@ -138,17 +144,18 @@ the type/API level rather than a runtime throw). Noted in `TODO.md`.
 
 ## 3. 优先级建议
 
-| 优先级 | 方向 | 环境可验证 | 商业边界风险 | 对项目价值 |
-|:---:|---|---|:---:|---|
-| P0 | A. 测试基建 + reducer 单测 | ✅ 可直接跑 | 无 | 高 |
-| P1 | B. Headless 注释编辑（TODO#2） | ✅ 可跑 build+单测 | 低（需确认引擎侧） | 中高（官方 Todo） |
-| P2 | C. i18n 占位符/回退 | ✅ | 无 | 中低 |
-| P3 | D. TS 类型加固 | ✅ | 无 | 中 |
+| 优先级 | 方向                           | 环境可验证         |    商业边界风险    | 对项目价值        |
+| :----: | ------------------------------ | ------------------ | :----------------: | ----------------- |
+|   P0   | A. 测试基建 + reducer 单测     | ✅ 可直接跑        |         无         | 高                |
+|   P1   | B. Headless 注释编辑（TODO#2） | ✅ 可跑 build+单测 | 低（需确认引擎侧） | 中高（官方 Todo） |
+|   P2   | C. i18n 占位符/回退            | ✅                 |         无         | 中低              |
+|   P3   | D. TS 类型加固                 | ✅                 |         无         | 中                |
 
 ---
 
 ## 4. 下一步
 
 决定发起哪个方向后，我可以：
+
 1. 直接用上面的 **issue 草稿**去 GitHub 发 issue 征询维护者意见（需先确认你有 GitHub 访问）；
 2. 或直接动手实现（先跑通构建与单测验证）。
